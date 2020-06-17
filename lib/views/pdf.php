@@ -280,11 +280,11 @@
                         <td width="59%" style="border:0.5px #000000 solid;border-top:2px #000000 solid;border-bottom:2px #000000 solid;text-align:left;"
                             ><b><?= ucfirst(mb_strtolower(html_entity_decode($langs->trans('stocktransfersPDF7')), "utf-8")) ?></b></td>
                         <td width="14%" style="border:0.5px #000000 solid;border-top:2px #000000 solid;border-bottom:2px #000000 solid;text-align:center;"
-                            ><b><?= ucfirst(mb_strtolower(mb_strtoupper(html_entity_decode($langs->trans('STprice')), "utf-8"), "utf-8")) ?></b></td>
+                            ><b><?= ucfirst(mb_strtoupper(html_entity_decode($langs->trans('STprice')), "utf-8")) ?></b></td>
                         <td width="10%" style="border:0.5px #000000 solid;border-top:2px #000000 solid;border-bottom:2px #000000 solid;text-align:center;"
                             ><b><?= ucfirst(mb_strtolower(substr(html_entity_decode($langs->trans('stocktransfersPDF5')),0,5), "utf-8")).'.' ?></b></td>
                         <td width="17%" style="border:0.5px #000000 solid;border-top:2px #000000 solid;border-bottom:2px #000000 solid;text-align:center;"
-                            ><b><?= ucfirst(mb_strtolower(mb_strtoupper(html_entity_decode($langs->trans('STtotal')), "utf-8"), "utf-8")) ?></b></td>
+                            ><b><?= ucfirst(mb_strtoupper(html_entity_decode($langs->trans('STtotal')), "utf-8")) ?></b></td>
                     <?php }else{ ?>
                         <td width="80%" style="border:0.5px #000000 solid;border-top:2px #000000 solid;border-bottom:2px #000000 solid;text-align:left;"
                             ><b><?= ucfirst(mb_strtolower(html_entity_decode($langs->trans('stocktransfersPDF7')), "utf-8")) ?></b></td>
