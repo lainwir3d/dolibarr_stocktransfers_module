@@ -93,7 +93,7 @@
 
     // == prepare logo
         if ( $mysoc->logo && file_exists($conf->mycompany->dir_output.'/logos/thumbs/'.$mysoc->logo_small) ) {
-            $logo_path = $conf->mycompany->dir_output.'/logos/thumbs/'.$mysoc->logo_small;
+		$logo_path = "file://" . $conf->mycompany->dir_output.'/logos/thumbs/'.$mysoc->logo_small;
         }else if (is_readable(DOL_DOCUMENT_ROOT.'/theme/dolibarr_logo.png')){
             $logo_path = DOL_DOCUMENT_ROOT.'/theme/dolibarr_logo.png';
         }else{
