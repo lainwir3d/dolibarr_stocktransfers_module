@@ -122,3 +122,5 @@ STsettLab12desc=Tags HTML de formatage acceptés (Ex: < b >). Trois lignes maxim
 STsettLab13=Ordre de la selection d'entrepôts
 STsettLab13opt1=Origine ➡ Destination
 STsettLab13opt2=Destination ⬅ Origine
+
+STProductCountAppended = L'entrée a été rajoutée à une ligne existante

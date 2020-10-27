@@ -215,25 +215,49 @@ if ($action == 'delete_transfer') {
 
 }else if ($action == 'add_line') {
 
+    //var_dump($_POST);die();
+
     if (empty($_POST['add_pid'])){
         $_SESSION['EventMessages'][] = array($langs->trans("ErrorGlobalVariableUpdater2",'product'),null,'errors');
     }else if (empty($_POST['n'])){
         $_SESSION['EventMessages'][] = array($langs->trans("ErrorGlobalVariableUpdater2",'n'),null,'errors');
     }else{
-        //echo _var_export($_POST,'$_POST');die();
-        $transfer->products[$_POST['add_pid']] = array(
-            'id'=>$_POST['add_pid'],
-            'n'=>intval($_POST['n']),
-            'b'=>isset($_POST['batch']) ? $_POST['batch'] : '',
-            'm'=>isset($_POST['m']) ? $_POST['m'] : '',
-        );
-        $transfer->n_prducts = count($transfer->products);
+	    //echo _var_export($_POST,'$_POST');die();
+	    //var_dump($transfer->products); die();
+	//var_dump($action);die();
+	$countappended = false;
+	if(array_key_exists($_POST['add_pid'], $transfer->products) && ($_POST['submit'] != "edit")){
+		//var_dump($transfer->products); die();
+
+		$oldcount = $transfer->products[$_POST['add_pid']]['n'];
+
+		$transfer->products[$_POST['add_pid']]['n'] = $oldcount + intval($_POST['n']);
+		
+		//var_dump($transfer->products); die();
+
+		$countappended = true;
+	}else{
+
+            $transfer->products[$_POST['add_pid']] = array(
+                'id'=>$_POST['add_pid'],
+                'n'=>intval($_POST['n']),
+                'b'=>isset($_POST['batch']) ? $_POST['batch'] : '',
+                'm'=>isset($_POST['m']) ? $_POST['m'] : '',
+    	    );
+	}
+
+	$transfer->n_prducts = count($transfer->products);
         $result = $transfer->update();
 
         if ($result < 0)
             dol_print_error($db,$transfer->error);
-        else
-            $_SESSION['EventMessages'][] = array("RecordModifiedSuccessfully",null,'mesgs');
+	else{
+	    if($countappended){
+	        $_SESSION['EventMessages'][] = array("STProductCountAppended",null,'mesgs');
+	    }else{
+                $_SESSION['EventMessages'][] = array("RecordModifiedSuccessfully",null,'mesgs');
+            }
+	}
     }
 
     // == redirect to list
