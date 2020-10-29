@@ -541,7 +541,8 @@
         }
         <?php if ($b_batch_enabled){ ?>
         $('#new_line input[name=batch]').val(tr.attr('data-batch'));
-        <?php } ?>
+	<?php } ?>
+	$('#transfer_product_form input[name=action]').val('edit_line');
         $('#new_line input[name=n]').val(tr.attr('data-n'));
         $('#new_line textarea[name=m]').val($('#ST_pid_'+pid+'_m').html());
         /* exchange save buttons */
