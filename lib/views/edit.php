@@ -405,8 +405,8 @@
 
                     <!-- ========= Button to add ========= -->
                     <td style='text-align:left;'>
-                        <button id="ST_add" name="submit" value="add"><?= dol_escape_htmltag($langs->trans("STAdd")) ?></button>
-                        <button id="ST_save" name="submit" style="display:none;" value="edit"><?= dol_escape_htmltag($langs->trans("STSave")) ?></button>
+                        <input id="ST_add" type="submit" class="button" value="<?= dol_escape_htmltag($langs->trans("STAdd")) ?>" />
+                        <input id="ST_save" type="submit" class="button" style="display:none;" value="<?= dol_escape_htmltag($langs->trans("STSave")) ?>" />
                     </td>
                 </tr>
 
