@@ -214,10 +214,10 @@
             <table border="0" cellpadding="7" style="border:none;">
                 <tr>
                     <td width="45%" style="padding:0px;"
-                        ><?= ucfirst(mb_strtolower(html_entity_decode($langs->trans($tit1)), "utf-8")) ?>:</td>
+                        ><?= ucfirst(mb_strtolower(html_entity_decode($langs->trans($tit1)))) ?>:</td>
                     <td width="10%" style="text-align:center;">&nbsp;</td>
                     <td width="45%" style="padding:0px;"
-                        ><?= ucfirst(mb_strtolower(html_entity_decode($langs->trans($tit2)), "utf-8")) ?>:</td>
+                        ><?= ucfirst(mb_strtolower(html_entity_decode($langs->trans($tit2)))) ?>:</td>
                 </tr>
                 <tr>
                     <td width="45%" style="border:0.5px #000000 solid;" bgcolor="#e6e6e6"
@@ -314,30 +314,30 @@
                 <tr>
 					<?php if ($show_reference=='Y2'){ ?>
                         <td width="15%" style="border:0.5px #000000 solid;border-top:2px #000000 solid;border-bottom:2px #000000 solid;text-align:center;"
-                            ><b><?= html_entity_decode($langs->trans('STsettLab07opt2'), "utf-8") ?></b></td>
+                            ><b><?= html_entity_decode($langs->trans('STsettLab07opt2')) ?></b></td>
 					<?php } ?>
 					<?php if ($show_serialcode=='Y2'){ ?>
                         <td width="15%" style="border:0.5px #000000 solid;border-top:2px #000000 solid;border-bottom:2px #000000 solid;text-align:center;"
-                            ><b><?= html_entity_decode($langs->trans('STBatch'), "utf-8") ?></b></td>
+                            ><b><?= html_entity_decode($langs->trans('STBatch')) ?></b></td>
 					<?php } ?>
 					<?php if ($show_barcode=='Y2'){ ?>
                         <td width="15%" style="border:0.5px #000000 solid;border-top:2px #000000 solid;border-bottom:2px #000000 solid;text-align:center;"
-                            ><b><?= html_entity_decode($langs->trans('STpdfBarCode'), "utf-8") ?></b></td>
+                            ><b><?= html_entity_decode($langs->trans('STpdfBarCode')) ?></b></td>
 					<?php } ?>
                     <?php if ($show_prices!='N'){ ?>
                         <td width="<?= $description_col ?>%" style="border:0.5px #000000 solid;border-top:2px #000000 solid;border-bottom:2px #000000 solid;text-align:left;"
-                            ><b><?= ucfirst(mb_strtolower(html_entity_decode($langs->trans('stocktransfersPDF7'), "utf-8"))) ?></b></td>
+                            ><b><?= ucfirst(mb_strtolower(html_entity_decode($langs->trans('stocktransfersPDF7')))) ?></b></td>
                         <td width="14%" style="border:0.5px #000000 solid;border-top:2px #000000 solid;border-bottom:2px #000000 solid;text-align:center;"
-                            ><b><?= ucfirst(mb_strtolower(html_entity_decode($langs->trans('STprice'), "utf-8"))) ?></b></td>
+                            ><b><?= ucfirst(mb_strtolower(html_entity_decode($langs->trans('STprice')))) ?></b></td>
                         <td width="10%" style="border:0.5px #000000 solid;border-top:2px #000000 solid;border-bottom:2px #000000 solid;text-align:center;"
-                            ><b><?= ucfirst(mb_strtolower(substr(html_entity_decode($langs->trans('stocktransfersPDF5'), "utf-8"),0,5))).'.' ?></b></td>
+                            ><b><?= ucfirst(mb_strtolower(substr(html_entity_decode($langs->trans('stocktransfersPDF5')),0,5))).'.' ?></b></td>
                         <td width="17%" style="border:0.5px #000000 solid;border-top:2px #000000 solid;border-bottom:2px #000000 solid;text-align:center;"
-                            ><b><?= ucfirst(mb_strtolower(html_entity_decode($langs->trans('STtotal'), "utf-8"))) ?></b></td>
+                            ><b><?= ucfirst(mb_strtolower(html_entity_decode($langs->trans('STtotal')))) ?></b></td>
                     <?php }else{ ?>
                         <td width="<?= $description_col ?>%" style="border:0.5px #000000 solid;border-top:2px #000000 solid;border-bottom:2px #000000 solid;text-align:left;"
-                            ><b><?= ucfirst(mb_strtolower(html_entity_decode($langs->trans('stocktransfersPDF7'), "utf-8"))) ?></b></td>
+                            ><b><?= ucfirst(mb_strtolower(html_entity_decode($langs->trans('stocktransfersPDF7')))) ?></b></td>
                         <td width="20%" style="border:0.5px #000000 solid;border-top:2px #000000 solid;border-bottom:2px #000000 solid;text-align:center;"
-                            ><b><?= ucfirst(mb_strtolower(html_entity_decode($langs->trans('stocktransfersPDF5'), "utf-8"))) ?></b></td>
+                            ><b><?= ucfirst(mb_strtolower(html_entity_decode($langs->trans('stocktransfersPDF5')))) ?></b></td>
                     <?php } ?>
                 </tr>
 
