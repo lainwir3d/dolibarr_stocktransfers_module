@@ -485,7 +485,7 @@
                         <?php if ($transfer->status == '0' ){ ?>
                             <a href="#" onclick="js_edit_line('<?= $pid ?>');return false;" style="display:inline-block;float:left;margin:3px;min-width:0;" 
 									class="button" title="<?= str_replace('"','',$langs->trans("STedit"))?>">
-                                <?= DOL_VERSION >= 12 && !defined('DISABLE_FONT_AWSOME') ? "<i class='fa fa-pencil'></i>" : img_edit($langs->trans("STedit")) ?></a>
+                                <?= DOL_VERSION >= 12 && !defined('DISABLE_FONT_AWSOME') ? "<i class='fa fa-pencil-alt' style='color:white;'></i>" : img_edit($langs->trans("STedit")) ?></a>
                             <a href="#" onclick="js_del_line('<?= $pid ?>');return false;" style="display:inline-block;float:left;margin:3px;min-width:0;" 
 									class="button" title="<?= str_replace('"','',$langs->trans("STRemove"))?>">
                                 <?= DOL_VERSION >= 12 && !defined('DISABLE_FONT_AWSOME') ? "<i class='fa fa-trash' style='color:white;'></i>" : img_delete($langs->trans("STRemove")) ?></a>
