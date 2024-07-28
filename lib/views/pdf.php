@@ -214,10 +214,10 @@
             <table border="0" cellpadding="7" style="border:none;">
                 <tr>
                     <td width="45%" style="padding:0px;"
-                        ><?= ucfirst(mb_strtolower(html_entity_decode($langs->trans($tit1)))) ?>:</td>
+                        ><?= ucfirst(html_entity_decode(mb_strtolower($langs->trans($tit1)))) ?>:</td>
                     <td width="10%" style="text-align:center;">&nbsp;</td>
                     <td width="45%" style="padding:0px;"
-                        ><?= ucfirst(mb_strtolower(html_entity_decode($langs->trans($tit2)))) ?>:</td>
+                        ><?= ucfirst(html_entity_decode(mb_strtolower($langs->trans($tit2)))) ?>:</td>
                 </tr>
                 <tr>
                     <td width="45%" style="border:0.5px #000000 solid;" bgcolor="#e6e6e6"
@@ -326,18 +326,18 @@
 					<?php } ?>
                     <?php if ($show_prices!='N'){ ?>
                         <td width="<?= $description_col ?>%" style="border:0.5px #000000 solid;border-top:2px #000000 solid;border-bottom:2px #000000 solid;text-align:left;"
-                            ><b><?= ucfirst(mb_strtolower(html_entity_decode($langs->trans('stocktransfersPDF7')))) ?></b></td>
+                            ><b><?= ucfirst(html_entity_decode(mb_strtolower($langs->trans('stocktransfersPDF7')))) ?></b></td>
                         <td width="14%" style="border:0.5px #000000 solid;border-top:2px #000000 solid;border-bottom:2px #000000 solid;text-align:center;"
-                            ><b><?= ucfirst(mb_strtolower(html_entity_decode($langs->trans('STprice')))) ?></b></td>
+                            ><b><?= ucfirst(html_entity_decode(mb_strtolower($langs->trans('STprice')))) ?></b></td>
                         <td width="10%" style="border:0.5px #000000 solid;border-top:2px #000000 solid;border-bottom:2px #000000 solid;text-align:center;"
-                            ><b><?= ucfirst(mb_strtolower(substr(html_entity_decode($langs->trans('stocktransfersPDF5')),0,5))).'.' ?></b></td>
+                            ><b><?= ucfirst(substr(html_entity_decode(mb_strtolower($langs->trans('stocktransfersPDF5')),0,5))).'.' ?></b></td>
                         <td width="17%" style="border:0.5px #000000 solid;border-top:2px #000000 solid;border-bottom:2px #000000 solid;text-align:center;"
-                            ><b><?= ucfirst(mb_strtolower(html_entity_decode($langs->trans('STtotal')))) ?></b></td>
+                            ><b><?= ucfirst(html_entity_decode(mb_strtolower($langs->trans('STtotal')))) ?></b></td>
                     <?php }else{ ?>
                         <td width="<?= $description_col ?>%" style="border:0.5px #000000 solid;border-top:2px #000000 solid;border-bottom:2px #000000 solid;text-align:left;"
-                            ><b><?= ucfirst(mb_strtolower(html_entity_decode($langs->trans('stocktransfersPDF7')))) ?></b></td>
+                            ><b><?= ucfirst(html_entity_decode(mb_strtolower($langs->trans('stocktransfersPDF7')))) ?></b></td>
                         <td width="20%" style="border:0.5px #000000 solid;border-top:2px #000000 solid;border-bottom:2px #000000 solid;text-align:center;"
-                            ><b><?= ucfirst(mb_strtolower(html_entity_decode($langs->trans('stocktransfersPDF5')))) ?></b></td>
+                            ><b><?= ucfirst(html_entity_decode(mb_strtolower($langs->trans('stocktransfersPDF5')))) ?></b></td>
                     <?php } ?>
                 </tr>
 
