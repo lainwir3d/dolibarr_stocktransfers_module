@@ -26,7 +26,7 @@
  */
 
     // == ACTIVATE the ERROR reporting
-    ini_set('display_errors',1);ini_set('display_startup_errors',1);error_reporting(-1);
+    //ini_set('display_errors',1);ini_set('display_startup_errors',1);error_reporting(-1);
 
 $res=0;
 if (! $res && file_exists("../main.inc.php")) $res=@include("../main.inc.php");
@@ -86,18 +86,6 @@ $langs->load("stocktransfers@stocktransfers");
     
 // == Security check
     $result = restrictedArea($user,'stock&produit');
-
-// == SESSION MESSAGES (this is from this module)
-    if (!empty($_SESSION['EventMessages']) && is_array($_SESSION['EventMessages']) && count($_SESSION['EventMessages'])>0){
-        foreach($_SESSION['EventMessages'] as $arr){
-            setEventMessages($arr[0],$arr[1],$arr[2]);
-        }
-    }
-    $_SESSION['EventMessages'] = array();
-
-if (!empty($_POST)){
-    //echo _var_export($_GET,'$_GET')._var_export($_POST,'$_POST')._var_export($_FILES,'$_FILES');    die();
-}
 
 /***************************************************
  * 

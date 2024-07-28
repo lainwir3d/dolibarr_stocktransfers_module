@@ -35,6 +35,12 @@
  *
 ****************************************************/
 
+    // == load module settings
+        $fontsize      = !empty($conf->global->STOCKTRANSFERS_MODULE_SETT_10) ? intval($conf->global->STOCKTRANSFERS_MODULE_SETT_10) : 10;
+        $fontfamily    = !empty($conf->global->STOCKTRANSFERS_MODULE_SETT_11) ? $conf->global->STOCKTRANSFERS_MODULE_SETT_11 : 'serif';
+        $warehouses_AB = !empty($conf->global->STOCKTRANSFERS_MODULE_SETT_13) ? $conf->global->STOCKTRANSFERS_MODULE_SETT_13 : 'A-B';
+		$show_logo     = !empty($conf->global->STOCKTRANSFERS_MODULE_SETT_15) ? $conf->global->STOCKTRANSFERS_MODULE_SETT_15 : 'Y';
+
     // == misc
         $now=dol_now();
         $socid = $user->societe_id > 0 ? $user->societe_id : 0;
@@ -72,7 +78,6 @@
         if ($resql) {
             while($row = $resql->fetch_assoc()) $depots[$row['rowid']] = $row;
         }
-        //echo _var_export($depots,'$depots');die();
 
     // == load products
         $products = array();
@@ -81,7 +86,6 @@
         if ($resql) {
             while($row = $resql->fetch_assoc()) $products[$row['rowid']] = $row;
         }
-        //echo _var_export($products,'$products');die();
 
     // == load project
         $project = array();
@@ -92,18 +96,43 @@
         }
 
     // == prepare logo
-        if ( $mysoc->logo && file_exists($conf->mycompany->dir_output.'/logos/thumbs/'.$mysoc->logo_small) ) {
-		$logo_path = "file://" . $conf->mycompany->dir_output.'/logos/thumbs/'.$mysoc->logo_small;
+		if ($show_logo == 'N'){
+			$logo_path = '';
+		}else if ($mysoc->logo && file_exists($conf->mycompany->dir_output.'/logos/thumbs/'.$mysoc->logo_small) ) {
+			$logo_path = "file://".$conf->mycompany->dir_output.'/logos/thumbs/'.$mysoc->logo_small;
         }else if (is_readable(DOL_DOCUMENT_ROOT.'/theme/dolibarr_logo.png')){
             $logo_path = DOL_DOCUMENT_ROOT.'/theme/dolibarr_logo.png';
         }else{
             $logo_path = '';
         }
 
-    // == miscellanea
-        $fontsize      = !empty($conf->global->STOCKTRANSFERS_MODULE_SETT_10) ? intval($conf->global->STOCKTRANSFERS_MODULE_SETT_10) : 10;
-        $fontfamily    = !empty($conf->global->STOCKTRANSFERS_MODULE_SETT_11) ? $conf->global->STOCKTRANSFERS_MODULE_SETT_11 : 'serif';
-        $warehouses_AB = !empty($conf->global->STOCKTRANSFERS_MODULE_SETT_13) ? $conf->global->STOCKTRANSFERS_MODULE_SETT_13 : 'A-B';
+	// == prepare languages translated for this module and get the translation for some keys
+		
+		$PDF_langcode = $langs->getDefaultLang();
+		$ex_lang = explode('_',$PDF_langcode);
+		$PDFlang = $ex_lang[0];
+		
+		$languages = scandir(STOCKTRANSFERS_MODULE_DOCUMENT_ROOT.'/langs');
+		$multi_translations = _multi_translation(array('STsettLab01def','stocktransfersPDF1','stocktransfersPDF8','stocktransfersPDF9','stocktransfersPDF10'),$languages);
+		//echo var_export($multi_translations,true);
+
+	// == preferences to render: reference, serial code, barcode
+		$show_prices     = !empty($conf->global->STOCKTRANSFERS_MODULE_SETT_05) ? $conf->global->STOCKTRANSFERS_MODULE_SETT_05 : 'N';
+		$show_reference  = !empty($conf->global->STOCKTRANSFERS_MODULE_SETT_18) ? $conf->global->STOCKTRANSFERS_MODULE_SETT_18 : 'Y';
+		$show_serialcode = !empty($conf->global->STOCKTRANSFERS_MODULE_SETT_08) ? $conf->global->STOCKTRANSFERS_MODULE_SETT_08 : 'N';
+		$show_barcode    = !empty($conf->global->STOCKTRANSFERS_MODULE_SETT_09) ? $conf->global->STOCKTRANSFERS_MODULE_SETT_09 : 'N';
+		
+		// deprecated (to keep compatibility with old settings "if empty value then show on DESC column"=M)
+		if ($show_serialcode=='M') $show_serialcode = 'Y';
+		if ($show_barcode   =='M') $show_barcode    = 'Y';
+		
+		// calculate the % occupied by the visible columns, because this % of space must be substracted to the DESCRIPTION COLUMN
+		$description_col_subtract = 0;
+		if ($show_reference =='Y2') $description_col_subtract += 15;
+		if ($show_serialcode=='Y2') $description_col_subtract += 15;
+		if ($show_barcode   =='Y2') $description_col_subtract += 15;
+		$description_col = $show_prices=='N' ? (80 - $description_col_subtract) : (59 - $description_col_subtract);
+	
 
 /***************************************************
  *
@@ -123,29 +152,36 @@
                 <tr>
                     <td style="text-align:left;">
                         <?php if ($logo_path!=''){  ?>
-                        <img height="60" src="<?= $logo_path ?>" />
+                        <img height="60" src="@<?= base64_encode(file_get_contents($logo_path))?>" />
                         <?php } ?>
                     </td>
                     <td><p style="text-align:right;">
-                        <?php if (!empty($conf->global->STOCKTRANSFERS_MODULE_SETT_01)){ ?>
-                            <span style="font-weight:bold;font-size:<?= $fontsize + 3 ?>px;"><?= $conf->global->STOCKTRANSFERS_MODULE_SETT_01 ?></span>
+                        <?php 
+							$s_translations = _json_decode_translation('STOCKTRANSFERS_MODULE_SETT_01',$defaultLang);
+							if (!empty($s_translations[$PDFlang])){ ?>
+                            <span style="font-weight:bold;font-size:<?= $fontsize + 3 ?>px;"><?= $s_translations[$PDFlang] ?></span>
                             <br />
                         <?php } ?>
+							<?php $s_translations = _json_decode_translation('STOCKTRANSFERS_MODULE_SETT_02',$defaultLang); ?>
                             <span style="font-size:<?= $fontsize + 1 ?>px;">
-                                <?= !empty($conf->global->STOCKTRANSFERS_MODULE_SETT_02) ? $conf->global->STOCKTRANSFERS_MODULE_SETT_02 : $langs->trans('stocktransfersPDF1') ?>:
+                                <?= !empty($s_translations[$PDFlang]) ? $s_translations[$PDFlang] : ( !empty($multi_translations['stocktransfersPDF1'][$PDFlang]) ? $multi_translations['stocktransfersPDF1'][$PDFlang] : $langs->trans('stocktransfersPDF1')) ?>:
                                 <span style="color:red;font-weight:bold;">#<?= substr('0000'.$transfer->rowid,-4) ?></span>
                             </span>
+                            <?php 
+								  $s_translations = _json_decode_translation('STOCKTRANSFERS_MODULE_SETT_17',$defaultLang);
+								  $date_format = isset($s_translations[$PDFlang]) ? $s_translations[$PDFlang] : (isset($s_translations[$defaultLang]) ? $s_translations[$defaultLang] : '');
+                            ?>
                             <br />
-                            <span style=""><?= html_entity_decode($langs->trans('stocktransfersDate1')).': '. dol_print_date($transfer->date1) ?></span>
+                            <span style=""><?= $langs->trans('stocktransfersDate1').': &nbsp;'. dol_print_date($transfer->date1 .' 13:01',$date_format) ?></span> 
                             <br />
                         <?php if ((!empty($conf->global->STOCKTRANSFERS_MODULE_SETT_03) && $conf->global->STOCKTRANSFERS_MODULE_SETT_03=='Y')
                                     || (!empty($conf->global->STOCKTRANSFERS_MODULE_SETT_03) && $conf->global->STOCKTRANSFERS_MODULE_SETT_03=='M' && !empty($transfer->shipper))){ ?>
-                            <span style=""><?= html_entity_decode($langs->trans('stocktransfersShipper')).': '. $transfer->shipper ?></span>
+                            <span style=""><?= $langs->trans('stocktransfersShipper').': '. $transfer->shipper ?></span>
                             <br />
                         <?php } ?>
                         <?php if ((!empty($conf->global->STOCKTRANSFERS_MODULE_SETT_04) && $conf->global->STOCKTRANSFERS_MODULE_SETT_04=='Y')
                                     || (!empty($conf->global->STOCKTRANSFERS_MODULE_SETT_04) && $conf->global->STOCKTRANSFERS_MODULE_SETT_04=='M' && !empty($transfer->n_package))){ ?>
-                            <span style=""><?= html_entity_decode($langs->trans('stocktransfersNPackages')).': '. $transfer->n_package ?></span>
+                            <span style=""><?= $langs->trans('stocktransfersNPackages').': '. $transfer->n_package ?></span>
                             <br />
                         <?php } ?>
                         </p>
@@ -200,16 +236,16 @@
                                 }
                                 echo '<b>'.$depot_label.'</b><br />';
                                 if (!empty($depots[$depot1]['address'])){
-                                        echo html_entity_decode(nl2br($depots[$depot1]['address'])).'<br />';
+                                        echo nl2br($depots[$depot1]['address']).'<br />';
                                 }
                                 if (!empty($depots[$transfer->fk_depot1]['zip'])){
-                                        echo html_entity_decode($depots[$depot1]['zip']). ' ';
+                                        echo $depots[$depot1]['zip']. ' ';
                                 }
                                 if (!empty($depots[$transfer->fk_depot1]['town'])){
-                                        echo html_entity_decode($depots[$depot1]['town']);
+                                        echo $depots[$depot1]['town'];
                                 }
                             }else{
-                                echo html_entity_decode($langs->trans('STwarehouse')).' #'.$depot1;
+                                echo $langs->trans('STwarehouse').' #'.$depot1;
                             }
                         ?>
                     </td>
@@ -232,16 +268,16 @@
                                 }
                                 echo '<b>'.$depot_label.'</b><br />';
                                 if (!empty($depots[$depot2]['address'])){
-                                        echo html_entity_decode(nl2br($depots[$depot2]['address'])).'<br />';
+                                        echo nl2br($depots[$depot2]['address']).'<br />';
                                 }
                                 if (!empty($depots[$depot2]['zip'])){
-                                        echo html_entity_decode($depots[$depot2]['zip']). ' ';
+                                        echo $depots[$depot2]['zip']. ' ';
                                 }
                                 if (!empty($depots[$depot2]['town'])){
-                                        echo html_entity_decode($depots[$depot2]['town']);
+                                        echo $depots[$depot2]['town'];
                                 }
                             }else{
-                                echo html_entity_decode($langs->trans('STwarehouse')).' #'.$depot2;
+                                echo $langs->trans('STwarehouse').' #'.$depot2;
                             }
                         ?>
                     </td>
@@ -257,7 +293,7 @@
     <tr>
         <td>
             <table border="0" cellpadding="7" style="border:none;">
-                <tr><td><?= html_entity_decode($langs->trans('STnote')) ?>:</td></tr>
+                <tr><td><?= $langs->trans('STnote') ?>:</td></tr>
                 <tr><td style="border:0.2px #000000 solid;"><?= nl2br($transfer->pdf_note) ?></td></tr>
             </table>
         </td>
@@ -276,20 +312,32 @@
                 <!-- TABLE HEADER -->
 
                 <tr>
-                    <?php if (!empty($conf->global->STOCKTRANSFERS_MODULE_SETT_05) && $conf->global->STOCKTRANSFERS_MODULE_SETT_05!='N'){ ?>
-                        <td width="59%" style="border:0.5px #000000 solid;border-top:2px #000000 solid;border-bottom:2px #000000 solid;text-align:left;"
-                            ><b><?= ucfirst(mb_strtolower(html_entity_decode($langs->trans('stocktransfersPDF7')), "utf-8")) ?></b></td>
+					<?php if ($show_reference=='Y2'){ ?>
+                        <td width="15%" style="border:0.5px #000000 solid;border-top:2px #000000 solid;border-bottom:2px #000000 solid;text-align:center;"
+                            ><b><?= html_entity_decode($langs->trans('STsettLab07opt2'), "utf-8") ?></b></td>
+					<?php } ?>
+					<?php if ($show_serialcode=='Y2'){ ?>
+                        <td width="15%" style="border:0.5px #000000 solid;border-top:2px #000000 solid;border-bottom:2px #000000 solid;text-align:center;"
+                            ><b><?= html_entity_decode($langs->trans('STBatch'), "utf-8") ?></b></td>
+					<?php } ?>
+					<?php if ($show_barcode=='Y2'){ ?>
+                        <td width="15%" style="border:0.5px #000000 solid;border-top:2px #000000 solid;border-bottom:2px #000000 solid;text-align:center;"
+                            ><b><?= html_entity_decode($langs->trans('STpdfBarCode'), "utf-8") ?></b></td>
+					<?php } ?>
+                    <?php if ($show_prices!='N'){ ?>
+                        <td width="<?= $description_col ?>%" style="border:0.5px #000000 solid;border-top:2px #000000 solid;border-bottom:2px #000000 solid;text-align:left;"
+                            ><b><?= ucfirst(mb_strtolower(html_entity_decode($langs->trans('stocktransfersPDF7'), "utf-8"))) ?></b></td>
                         <td width="14%" style="border:0.5px #000000 solid;border-top:2px #000000 solid;border-bottom:2px #000000 solid;text-align:center;"
-                            ><b><?= ucfirst(mb_strtoupper(html_entity_decode($langs->trans('STprice')), "utf-8")) ?></b></td>
+                            ><b><?= ucfirst(mb_strtolower(html_entity_decode($langs->trans('STprice'), "utf-8"))) ?></b></td>
                         <td width="10%" style="border:0.5px #000000 solid;border-top:2px #000000 solid;border-bottom:2px #000000 solid;text-align:center;"
-                            ><b><?= ucfirst(mb_strtolower(substr(html_entity_decode($langs->trans('stocktransfersPDF5')),0,5), "utf-8")).'.' ?></b></td>
+                            ><b><?= ucfirst(mb_strtolower(substr(html_entity_decode($langs->trans('stocktransfersPDF5'), "utf-8"),0,5))).'.' ?></b></td>
                         <td width="17%" style="border:0.5px #000000 solid;border-top:2px #000000 solid;border-bottom:2px #000000 solid;text-align:center;"
-                            ><b><?= ucfirst(mb_strtoupper(html_entity_decode($langs->trans('STtotal')), "utf-8")) ?></b></td>
+                            ><b><?= ucfirst(mb_strtolower(html_entity_decode($langs->trans('STtotal'), "utf-8"))) ?></b></td>
                     <?php }else{ ?>
-                        <td width="80%" style="border:0.5px #000000 solid;border-top:2px #000000 solid;border-bottom:2px #000000 solid;text-align:left;"
-                            ><b><?= ucfirst(mb_strtolower(html_entity_decode($langs->trans('stocktransfersPDF7')), "utf-8")) ?></b></td>
+                        <td width="<?= $description_col ?>%" style="border:0.5px #000000 solid;border-top:2px #000000 solid;border-bottom:2px #000000 solid;text-align:left;"
+                            ><b><?= ucfirst(mb_strtolower(html_entity_decode($langs->trans('stocktransfersPDF7'), "utf-8"))) ?></b></td>
                         <td width="20%" style="border:0.5px #000000 solid;border-top:2px #000000 solid;border-bottom:2px #000000 solid;text-align:center;"
-                            ><b><?= ucfirst(mb_strtolower(html_entity_decode($langs->trans('stocktransfersPDF5')), "utf-8")) ?></b></td>
+                            ><b><?= ucfirst(mb_strtolower(html_entity_decode($langs->trans('stocktransfersPDF5'), "utf-8"))) ?></b></td>
                     <?php } ?>
                 </tr>
 
@@ -299,56 +347,61 @@
                     $total = 0; $n_rows=0; $n_units=0;
                     foreach($transfer->products as $p){
                         $n_rows++;
-                        $label = '';
-                        if (!empty($products[$p['id']])){
-                            $a_label = array();
-                            if (!empty($products[$p['id']]['ref'])) $a_label[] = $products[$p['id']]['ref'];
-                            if (!empty($products[$p['id']]['label'])) $a_label[] = $products[$p['id']]['label'];
-                            $label = trim(implode(' - ',$a_label));
-                        }
-                        if ($label=='')$label =  '#'.$p['id'];
+                        $label = ''; 
+                        
+						// = product reference, serial number, barcode
+							$p_reference  = strip_tags(isset($products[$p['id']]) && !empty($products[$p['id']]['ref']) && mb_strlen($products[$p['id']]['ref'])>1 ? $products[$p['id']]['ref'] : '');
+							$p_serialcode = strip_tags(!empty($p['b']) && mb_strlen($p['b'])>1 ? $p['b'] : '');
+							$p_barcode    = strip_tags(isset($products[$p['id']]) && !empty($products[$p['id']]['barcode']) && mb_strlen($products[$p['id']]['barcode'])>1 ? $products[$p['id']]['barcode'] : '');
+                        
+                        // = label
+						// _ ex: [100010011101010] (lot-x) PROD-01 - Product 01  // <--- [SERIAL CODE] (LOT) REF - LABEL
 
-                        // = part number / serial code
-                            if (!empty($conf->global->STOCKTRANSFERS_MODULE_SETT_08) && $conf->global->STOCKTRANSFERS_MODULE_SETT_08!='N'){
-                                if ($conf->global->STOCKTRANSFERS_MODULE_SETT_08=='Y' || (!empty($p['b']) && mb_strlen($p['b'])>1)){
-                                        $label = '('.$p['b'].') '.$label;
-                                }
-                            }
+							$a_label = array();
+							if ($show_barcode   =='Y' && $p_barcode!='')    $a_label[] = '['.$p_barcode.']';
+							if ($show_serialcode=='Y' && $p_serialcode!='') $a_label[] = '('.$p_serialcode.')';
+							if ($show_reference =='Y' && $p_reference!='')  $a_label[] = $p_reference;
+							if (!empty($products[$p['id']]['label']))        $a_label[] = $products[$p['id']]['label'];
+							$label = trim(implode(' - ',$a_label));
+							if ($label=='') $label =  '#'.$p['id'];
 
-                        // = barcode
-                            if (!empty($conf->global->STOCKTRANSFERS_MODULE_SETT_09) && $conf->global->STOCKTRANSFERS_MODULE_SETT_09!='N'){
-                                if ($conf->global->STOCKTRANSFERS_MODULE_SETT_08=='Y' ||
-                                        (!empty($products[$p['id']]) && !empty($products[$p['id']]['barcode']) && mb_strlen($products[$p['id']]['barcode'])>1)){
-                                        $label = '['.$products[$p['id']]['barcode'].'] '.$label;
-                                }
-                            }
-
-                        $n = !empty($p['n']) ? floatval($p['n']) : '';
-                        if ($n!='') $n_units += $n;
+						// = units
+							$n = !empty($p['n']) ? floatval($p['n']) : '';
+							if ($n!='') $n_units += $n;
                 ?>
                 <tr>
-                    <?php if (!empty($conf->global->STOCKTRANSFERS_MODULE_SETT_05) && $conf->global->STOCKTRANSFERS_MODULE_SETT_05!='N'){
-                        $price = ''; $subtotal = '';
-                        if ($conf->global->STOCKTRANSFERS_MODULE_SETT_05=='Y'){
-                            $price = !empty($products[$p['id']]) && !empty($products[$p['id']]['price']) ? floatval($products[$p['id']]['price']) : '';
-                        }else if ($conf->global->STOCKTRANSFERS_MODULE_SETT_05=='T'){
-                            $price = !empty($products[$p['id']]) && !empty($products[$p['id']]['price_ttc']) ? floatval($products[$p['id']]['price_ttc']) : '';
-                        }
+					<?php if ($show_reference=='Y2'){ ?>
+                        <td width="15%" style="border:0.5px #000000 solid;text-align:center;"><?= $p_reference ?></td>
+					<?php } ?>
+					<?php if ($show_serialcode=='Y2'){ ?>
+                        <td width="15%" style="border:0.5px #000000 solid;text-align:center;"><?= $p_serialcode ?></td>
+					<?php } ?>
+					<?php if ($show_barcode=='Y2'){ ?>
+                        <td width="15%" style="border:0.5px #000000 solid;text-align:center;"><?= $p_barcode ?></td>
+					<?php } ?>
+                    <?php 
+						if ($show_prices!='N'){
+							$price = ''; $subtotal = '';
+							if ($conf->global->STOCKTRANSFERS_MODULE_SETT_05=='Y'){
+								$price = !empty($products[$p['id']]) && !empty($products[$p['id']]['price']) ? floatval($products[$p['id']]['price']) : '';
+							}else if ($conf->global->STOCKTRANSFERS_MODULE_SETT_05=='T'){
+								$price = !empty($products[$p['id']]) && !empty($products[$p['id']]['price_ttc']) ? floatval($products[$p['id']]['price_ttc']) : '';
+							}
                         $subtotal = $price!='' && $n!='' ? $price * $n : '';
                         if ($subtotal!='') $total += $subtotal;
                     ?>
-                        <td width="59%" style="border:0.5px #000000 solid;text-align:left;"><?php
+                        <td width="<?= $description_col ?>%" style="border:0.5px #000000 solid;text-align:left;"><?php
                                 echo "<p style=\"padding:0;margin:0;\">".$label;
-                                if (!empty($p['m'])){
+                                if (!empty($p['m']) && trim(strip_tags($p['m']))!=''){
                                     echo "<br /><span style=\"font-size:0.9em;font-family:monospace;\">".nl2br($p['m'])."</span>";
                                 }
                                 echo "</p>";
-                            ?></td>
+					  ?></td>
                         <td width="14%" style="border:0.5px #000000 solid;text-align:right;"><?= $price!='' ? _price($price) : '&nbsp;' ?></td>
-                        <td width="10%" style="border:0.5px #000000 solid;text-align:right;"><?= $n!='' ? $n : '&nbsp;' ?></td>
+                        <td width="10%" style="border:0.5px #000000 solid;text-align:right;"><?= $n!='' ? _qty($n) : '&nbsp;' ?></td>
                         <td width="17%" style="border:0.5px #000000 solid;text-align:right;"><?= $subtotal!='' ? _price($subtotal) : '&nbsp;' ?></td>
                     <?php }else{ ?>
-                        <td width="80%" style="border:0.5px #000000 solid;text-align:left;"><?php
+                        <td width="<?= $description_col ?>%" style="border:0.5px #000000 solid;text-align:left;"><?php
                                 echo "<p style=\"padding:0;margin:0;\">".$label;
                                 if (!empty($p['m'])){
                                     echo "<br /><span style=\"font-size:0.9em;font-family:monospace;\">".nl2br($p['m'])."</span>";
@@ -367,13 +420,22 @@
                     for($ii=0 ; $ii < (20 - count($transfer->products)); $ii++){ ?>
 
                 <tr>
-                    <?php if (!empty($conf->global->STOCKTRANSFERS_MODULE_SETT_05) && $conf->global->STOCKTRANSFERS_MODULE_SETT_05!='N'){ ?>
-                        <td width="59%" style="border:0.5px #000000 solid;text-align:left;">&nbsp;</td>
+					<?php if ($show_reference=='Y2'){ ?>
+                        <td width="15%" style="border:0.5px #000000 solid;text-align:center;">&nbsp;</td>
+					<?php } ?>
+					<?php if ($show_serialcode=='Y2'){ ?>
+                        <td width="15%" style="border:0.5px #000000 solid;text-align:center;">&nbsp;</td>
+					<?php } ?>
+					<?php if ($show_barcode=='Y2'){ ?>
+                        <td width="15%" style="border:0.5px #000000 solid;text-align:center;">&nbsp;</td>
+					<?php } ?>
+                    <?php if ($show_prices!='N'){ ?>
+                        <td width="<?= $description_col ?>%" style="border:0.5px #000000 solid;text-align:left;">&nbsp;</td>
                         <td width="14%" style="border:0.5px #000000 solid;text-align:center;">&nbsp;</td>
                         <td width="10%" style="border:0.5px #000000 solid;text-align:center;">&nbsp;</td>
                         <td width="17%" style="border:0.5px #000000 solid;text-align:center;">&nbsp;</td>
                     <?php }else{ ?>
-                        <td width="80%" style="border:0.5px #000000 solid;text-align:center;">&nbsp;</td>
+                        <td width="<?= $description_col ?>%" style="border:0.5px #000000 solid;text-align:center;">&nbsp;</td>
                         <td width="20%" style="border:0.5px #000000 solid;text-align:center;">&nbsp;</td>
                     <?php } ?>
                 </tr>
@@ -382,21 +444,21 @@
 
                 <!-- TABLE FOOTER -->
 
-                <?php if (!empty($conf->global->STOCKTRANSFERS_MODULE_SETT_05) && $conf->global->STOCKTRANSFERS_MODULE_SETT_05!='N'){ ?>
+                <?php if ($show_prices!='N'){ ?>
                     <tr>
                         <td width="64%" style="border-left:0.5px #000000 solid;border-top:2px #000000 solid;border-bottom:2px #000000 solid;text-align:left;"
-                            ><b><?= html_entity_decode($langs->trans('STtotal'))
-                                    ."</b> ".str_replace(array('{n1}','{n2}'),array($n_rows,$n_units),$langs->trans('STtotalProductsUnits')) ?></td>
+                            ><b><?= $langs->trans('STtotal')
+                                    ."</b> ".str_replace(array('{n1}','{n2}'),array($n_rows,_qty($n_units)),$langs->trans('STtotalProductsUnits')) ?></td>
                         <td width="36%" style="border-right:0.5px #000000 solid;border-top:2px #000000 solid;border-bottom:2px #000000 solid;text-align:right;"
                             ><?= $total!='' ? _price($total) : '&nbsp;' ?></td>
                     </tr>
                 <?php }else{ ?>
                     <tr>
                         <td width="80%" style="border-left:0.5px #000000 solid;border-top:2px #000000 solid;border-bottom:2px #000000 solid;text-align:left;"
-                            ><b><?= html_entity_decode($langs->trans('STtotal'))
+                            ><b><?= $langs->trans('STtotal')
                                     ."</b> ".str_replace('{n1}',$n_rows,$langs->trans('STtotalProducts')) ?></td>
                         <td width="20%" style="border-right:0.5px #000000 solid;border-top:2px #000000 solid;border-bottom:2px #000000 solid;text-align:center;"
-                            ><?= $n_units!='' ? $n_units : '&nbsp;' ?></td>
+                            ><?= $n_units!='' ? _qty($n_units) : '&nbsp;' ?></td>
                     </tr>
                 <?php } ?>
             </table>
@@ -406,27 +468,30 @@
     <!-- === SIGNATURES === -->
 
     <tr><td><p>&nbsp;<br />&nbsp;</p><p>&nbsp;<br />&nbsp;</p></td></tr>
-
+    
     <tr>
         <td>
             <table border="0" cellpadding="5">
                 <tr>
                     <td style="text-align:center;">
-                        <?php if (!empty($conf->global->{'STOCKTRANSFERS_MODULE_SETT_061'})){ ?>
+						<?php $s_translations = _json_decode_translation('STOCKTRANSFERS_MODULE_SETT_061',$defaultLang); ?>
+                        <?php if (!empty($s_translations[$PDFlang])){ ?>
                         _____________________
-                        <br /><b><?= html_entity_decode($conf->global->{'STOCKTRANSFERS_MODULE_SETT_061'}) ?></b>
+                        <br /><b><?= $s_translations[$PDFlang] ?></b>
                         <?php } ?>
                     </td>
                     <td style="text-align:center;">
-                        <?php if (!empty($conf->global->{'STOCKTRANSFERS_MODULE_SETT_062'})){ ?>
+						<?php $s_translations = _json_decode_translation('STOCKTRANSFERS_MODULE_SETT_062',$defaultLang); ?>
+                        <?php if (!empty($s_translations[$PDFlang])){ ?>
                         _____________________
-                        <br /><b><?= html_entity_decode($conf->global->{'STOCKTRANSFERS_MODULE_SETT_062'}) ?></b>
+                        <br /><b><?= $s_translations[$PDFlang] ?></b>
                         <?php } ?>
                     </td>
                     <td style="text-align:center;">
-                        <?php if (!empty($conf->global->{'STOCKTRANSFERS_MODULE_SETT_063'})){ ?>
+						<?php $s_translations = _json_decode_translation('STOCKTRANSFERS_MODULE_SETT_063',$defaultLang); ?>
+                        <?php if (!empty($s_translations[$PDFlang])){ ?>
                         _____________________
-                        <br /><b><?= html_entity_decode($conf->global->{'STOCKTRANSFERS_MODULE_SETT_063'}) ?></b>
+                        <br /><b><?= $s_translations[$PDFlang] ?></b>
                         <?php } ?>
                     </td>
                 </tr>

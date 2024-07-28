@@ -34,17 +34,8 @@
         define('STOCKTRANSFERS_MODULE_URL_ROOT',DOL_URL_ROOT.'/stocktransfers');
     }
 
-require_once DOL_DOCUMENT_ROOT.'/core/triggers/dolibarrtriggers.class.php';
-require_once STOCKTRANSFERS_MODULE_DOCUMENT_ROOT."/lib/stocktransfers_transfer.class.php";
-
-// == STOCKTRANSFERS_MODULE DOCUMENT_ROOT & URL_ROOT
-    if (file_exists(DOL_DOCUMENT_ROOT.'/custom/stocktransfers/core/modules/modStocktransfers.class.php')){
-        define('STOCKTRANSFERS_MODULE_DOCUMENT_ROOT',DOL_DOCUMENT_ROOT.'/custom/stocktransfers');
-        define('STOCKTRANSFERS_MODULE_URL_ROOT',DOL_URL_ROOT.'/custom/stocktransfers');
-    }else{
-        define('STOCKTRANSFERS_MODULE_DOCUMENT_ROOT',DOL_DOCUMENT_ROOT.'/stocktransfers');
-        define('STOCKTRANSFERS_MODULE_URL_ROOT',DOL_URL_ROOT.'/stocktransfers');
-    }
+dol_include_once('/core/triggers/dolibarrtriggers.class.php');
+dol_include_once('/stocktransfers/lib/stocktransfers_transfer.class.php');
 
 //ini_set('display_errors',1);ini_set('display_startup_errors',1);error_reporting(-1); // == ACTIVATE the ERROR reporting
 
@@ -77,9 +68,9 @@ class InterfaceStockTransfers extends DolibarrTriggers
      */
     public function runTrigger($action, $object, User $user, Translate $langs, Conf $conf)
     {
-        global $db;
+		global $db;
 		// Put here code you want to execute when a Dolibarr business events occurs.
-        // Data and type of action are stored into $object and $action
+		// Data and type of action are stored into $object and $action
 
 	    switch ($action) {
 
@@ -93,11 +84,11 @@ class InterfaceStockTransfers extends DolibarrTriggers
                             || $_SESSION['last_stocktransfer_token']!=$_POST['token']){
 
                         if (empty($_SESSION['massstockmove'])) break;
-                        $listofdata = json_decode($_SESSION['massstockmove'],true);
 
-                        dol_include_once("stocktransfers/lib/stocktransfers_transfer.class.php");
+                        $listofdata = json_decode($_SESSION['massstockmove'],true);
+                        dol_include_once('/stocktransfers/lib/stocktransfers_transfer.class.php');
                         $transfer = new StockTransfer($db);
-                        $transfer->label = 'Guaiii';
+                        $transfer->label = 'Alert: massive stock movement';
                         $transfer->s = 'GET= '.var_export($_GET,true).' | POST= '.var_export($_POST,true).' | _SESSION[massstockmove]= '.var_export($listofdata,true);
                         $result = $transfer->create(NULL);
                         if ($result < 0) dol_print_error($db,$transfer->error);

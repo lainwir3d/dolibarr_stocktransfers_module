@@ -1,6 +1,6 @@
 # Dolibarr language file - ca_ES - stocktransfers
 CHARSET= UTF-8
-Module570002Name=Products - stocktransfers
+Module570002Name=StockTransfers
 stocktransfersMenuTitle1=Nova transferència
 stocktransfersMenuTitle2=Transferències
 stocktransfersBriefTitle=Transferències de stock
@@ -47,7 +47,7 @@ stocktransfersConfig01=Per a que un usuari tengui accés en aquest mòdul ha de 
 stocktransfersBoxTitle=Darreres %s transferències d'stock
 stocktransfersProject=Projecte
 stocktransfersUserGuide=Manual d'usuari
-purchasesMenuTitle3=Llista de transferències d'accions
+purchasesMenuTitle3=Llista de transferències
 WarehouseSource=Magatzem d'origen
 WarehouseTarget=Magatzem de destí
 STLabelMovement=Etiqueta del moviment
@@ -66,10 +66,10 @@ STLabel=Etiqueta
 STinventorycode=Codi d'inventari
 STProducts=Productes
 STRemove=Treure
-STFilename=TransferenciaStock
+STFilename=Transferencia
 STFilterThis=Filtrar elements amb aquest valor en aquesta columna
 STErrorMsg05=Heu de seleccionar un producte.
-STErrorMsg06=La quantitat ha de ser un nombre sencer positiu.
+STErrorMsg06=La quantitat ha de ser un nombre positiu sencer o decimal.
 STErrorMsg07=Avís: aquest producte ja havia estat afegit. Les dades que ara indiqueu reemplaçaran a les que hi havien. Voleu continuar?
 STwarehouse=Magatzem
 STsettExampleAbbrv=Ex:
@@ -122,3 +122,27 @@ STsettLab12desc=S'accepta etiquetes HTML de format. Màx. 3 línies. Com Nom de 
 STsettLab13=Posició dels requadres dels magatzems
 STsettLab13opt1=Sortida ➡ Arribada
 STsettLab13opt2=Arribada ⬅ Sortida
+
+##### version 1.15 #####
+
+STsettTit04=Miscel·lània
+STsettLab14=Núm. de decimals per quantitats d'estoc
+
+##### version 1.22 #####
+
+STsettLab15=Mostrar el logo
+
+##### version 1.23 #####
+
+STsettLab16=Idioma per defecte
+STsettLab16opt1=El de l'usuari generant el PDF
+STsettLab17=Format de la data
+STsettLab17opt1=El format definit al sistema
+
+##### version 1.31 #####
+
+STsettLab08opt2=Sí (a la columna Descripció)
+STsettLab08opt2b=Sí (a la seva pròpia columna)
+STsettLab18=Mostrar la referència
+STpdfBarCode=Codi de barres
+

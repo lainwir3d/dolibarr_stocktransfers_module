@@ -1,6 +1,6 @@
 # Dolibarr language file - de_DE - stocktransfers
 CHARSET= UTF-8
-Module570002Name=Lager Warentransfer
+Module570002Name=StockTransfers
 stocktransfersMenuTitle1=Neuer Warentransfer
 stocktransfersMenuTitle2=Lager Warentransfer
 stocktransfersBriefTitle=Lager Warentransfer
@@ -69,7 +69,7 @@ STRemove=Entfernen
 STFilename=Lagerwarentransfer
 STFilterThis=Filtern aller Elemente mit diesem Wert in dieser Spalte
 STErrorMsg05=Sie müssen ein Produkt auswählen.
-STErrorMsg06=Die Menge muss eine positive Ganzzahl sein.
+STErrorMsg06=Die Menge muss eine ganze Zahl oder eine positive Dezimalzahl sein.
 STErrorMsg07=Warning: Dieses Produkt wurde bereits ausgewählt. Die ausgewählten Daten ersetzen die bereits existierenden. Möchten Sie wirklich fortfahren?
 STwarehouse=Warenlager
 STsettExampleAbbrv=Bsp:
@@ -122,3 +122,27 @@ STsettLab12desc=HTML Format Tags sind erlaubt. Max 3 Zeilen wie z.B. Firmenname,
 STsettLab13=Position of warehouses' boxes
 STsettLab13opt1=Departure ➡ Destination
 STsettLab13opt2=Destination ⬅ Departure
+
+##### version 1.15 #####
+
+STsettTit04=Verschiedenes
+STsettLab14=Anzahl Dezimalstellen für Lagermengen
+
+##### version 1.22 #####
+
+STsettLab15=Zeigen Sie das Logo
+
+##### version 1.23 #####
+
+STsettLab16=Standardsprache
+STsettLab16opt1=Derjenige des Benutzers, der das PDF erstellt
+STsettLab17=Datumsformat
+STsettLab17opt1=Das im System definierte Format
+
+##### version 1.31 #####
+
+STsettLab08opt2=Ja (in der Spalte Beschreibung)
+STsettLab08opt2b=Ja (in der eigenen Spalte)
+STsettLab18=Die Referenz anzeigen
+STpdfBarCode=Strichcode
+

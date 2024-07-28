@@ -1,6 +1,6 @@
 # Dolibarr language file - es_ES - stocktransfers
 CHARSET= UTF-8
-Module570002Name=Products - stocktransfers
+Module570002Name=StockTransfers
 stocktransfersMenuTitle1=Nueva transferencia
 stocktransfersMenuTitle2=Transferencias
 stocktransfersBriefTitle=Transferencias de stock
@@ -47,7 +47,7 @@ stocktransfersConfig01=Para que un usuario tenga acceso a este módulo debe tene
 stocktransfersBoxTitle=Últimas %s transferencias de stock
 stocktransfersProject=Proyecto
 stocktransfersUserGuide=Manual de usuario
-purchasesMenuTitle3=Lista de transferencias de acciones
+purchasesMenuTitle3=Lista de transferencias
 WarehouseSource=Almacén de origen
 WarehouseTarget=Almacén de destino
 STLabelMovement=Etiqueta de la transferencia
@@ -66,10 +66,10 @@ STLabel=Etiqueta
 STinventorycode=Código de inventario
 STProducts=Productos
 STRemove=Quitar
-STFilename=TransferenciaDeStock
+STFilename=Transferencia
 STFilterThis=Filtrar elementos con este valor en esta columna
 STErrorMsg05=Ha de seleccionar un producto.
-STErrorMsg06=La cantidad ha de ser un número entero positivo.
+STErrorMsg06=La cantidad ha de ser un número entero o decimal positivo.
 STErrorMsg07=Aviso: este producto ya había sido añadido. Los datos que ahora indica reemplazarán a los que habían. ¿Quiere continuar?
 STwarehouse=Almacén
 STsettExampleAbbrv=Ej:
@@ -122,3 +122,27 @@ STsettLab12desc=Se acepta etiquetas HTML de formato. Màx. 3 línias. Como Nombr
 STsettLab13=Posición de los recuadros de los almacenes
 STsettLab13opt1=Salida ➡ Llegada
 STsettLab13opt2=Llegada ⬅ Salida
+
+##### version 1.15 #####
+
+STsettTit04=Miscelánea
+STsettLab14=Núm. de decimales para cantidades de stock
+
+##### version 1.22 #####
+
+STsettLab15=Mostrar el logo
+
+##### version 1.23 #####
+
+STsettLab16=Idioma por defecto
+STsettLab16opt1=El del usuario generando el PDF
+STsettLab17=Formato de la fecha
+STsettLab17opt1=El formato definido en el sistema
+
+##### version 1.31 #####
+
+STsettLab08opt2=Sí (en la columna Descripción)
+STsettLab08opt2b=Sí (en su propia columna)
+STsettLab18=Mostrar la referencia
+STpdfBarCode=Código de barras
+

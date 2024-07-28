@@ -5,11 +5,13 @@ stocktransfersMenuTitle1=Nouveau Transfert de Stock
 stocktransfersMenuTitle2=Transferts de Stock
 stocktransfersBriefTitle=Transferts de Stock
 stocktransfersTransfer=Transfert de Stock
-stocktransfersDescription=Module pour gérer les transferts de stock entre les entrepôts. Un nouvel élement de menu dans la section produits vous permet de transférer les produits avec les mouvements intégrés de Dolibarr et vous permet également d'imprimer une liste / un ordre de transfert PDF.
+stocktransfersDescription=Module pour gérer les transferts de stock entre entrepôts
 stocktransfersObjectTitle=Transfert de Stock entre entrepôts
-stocktransfersSetup=Paramètres du module Transferts de Stock
+stocktransfersSetup=Configuration du module Transferts de stock
+stocktransfersSummary=Resumé du module Transferts de stock
 stocktransfersSummary=Résumé du Transfert de Stock
 stocktransfersSetupNotComplete=Le paramétrage du module Transferts de Stock n'est pas terminé
+stocktransfersSetupNotComplete=La configuration du module Transferts de stock est incomplète
 stocktransfersAboutInfo=Ce module est développé et distribué par Sergi Rodrigues (caos30) pour IMASDEWEB, <a href="https://imasdeweb.com" target="_blank" title="S'ouvre dans une nouvelle fenêtre">imasdeweb.com</a> (une future société "Dolibarr Preferred Partner" ;o).
 stocktransfersMoreModules=D'autres modules du même auteur sont disponibles sur la place de marché officielle DoliStore...
 stocktransfersMoreModulesLink=<p><a title="S'ouvre dans une nouvelle fenêtre" target="_blank" href="http://www.dolistore.com/search.php?search_query=%s">Cliquez ici pour voir la liste complète</a></p>
@@ -67,7 +69,7 @@ STinventorycode=Code d'inventaire
 STProducts=Produits
 STRemove=Supprimer
 STFilename=TransfertDeStock
-STFilterThis=Filtrer les éléments de cette colonne ayant cette valeur
+STFilterThis=Filtrer les éléments de cette colonne
 STErrorMsg05=Vous devez sélectionner un produit.
 STErrorMsg06=La quantité doit être un chiffre entier et positif.
 STErrorMsg07=Avertissement: ce produit figure déjà dans la liste. Cette opération remplacera les données existantes. Voulez-vous continuer?
@@ -101,19 +103,19 @@ STprice=Prix
 STtotal=Total
 STyes=Oui
 STno=Non
-STtabAbout=À propos
+STtabAbout=à propos
 STtabConfig=Configuration
 
 ##### version 1.14 #####
 
 STnote=Note
 STprivateNote=Note privée:
-STpdfNote=Note à inclure dans le PDF:
-STconfirmDEL=Cette action ne pourra être annulée, voulez-vous continuer?
+STpdfNote=Note publique:
+STconfirmDEL=Cette action est irréversible, désirez-vous continuer?
 STedit=Editer
 STtotalProducts=({n1} produits)
 STtotalProductsUnits=({n1} produits, {n2} unités)
-STsettTit00=Paramètres généraux du PDF
+STsettTit00=Configuration des PDF
 STsettLab10=Taille de la police
 STsettLab11=Famille de la police
 STsettLab12=Texte libre de pied page
@@ -124,3 +126,27 @@ STsettLab13opt1=Origine ➡ Destination
 STsettLab13opt2=Destination ⬅ Origine
 
 STProductCountAppended = L'entrée a été rajoutée à une ligne existante
+
+##### version 1.15 #####
+
+STsettTit04=Recueil
+STsettLab14=Nombre de décimales pour les quantités en stock
+
+##### version 1.22 #####
+
+STsettLab15=Afficher le logo
+
+##### version 1.23 #####
+
+STsettLab16=Langage par défaut
+STsettLab16opt1=Celui de l'utilisateur générant le PDF
+STsettLab17=Format de date
+STsettLab17opt1=Le format défini dans le système
+
+##### version 1.31 #####
+
+STsettLab08opt2=Oui (dans la colonne Description)
+STsettLab08opt2b=Oui (dans sa propre colonne)
+STsettLab18=Montrer la référence
+STpdfBarCode=Code à barres
+

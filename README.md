@@ -1,8 +1,8 @@
 # [dolibarr_stocktransfers_module](https://github.com/caos30/dolibarr_stocktransfers_module)
 
-## Current version: 1.14 [2020-04-29]
+## Current version: 1.31 [2023-08-07]
 
-Compatible with Dolibarr v. 5.X-11.X
+Compatible with Dolibarr v. 5.X-17.X
 
 ## Description
 
@@ -12,7 +12,7 @@ The module allows the download of a PDF file with the list of products to be tra
 
 ## Interface language translations
 
-Until now: English / Catalan / Castillian (spanish) / Italian / German
+Until now: English / Catalan / Castillian (spanish) / Italian / German / French
 
 ## Slide presentation
 
@@ -26,13 +26,13 @@ Caos30 was the initial developer of this module, made for an specific customer o
 
 The usual to any other module of Dolibarr.
 
-Note: if you are updating your existing module -already using it- go to Settings > Modules and visit the settings of this module, and do at least one time a SAVE of settings with new configuration. It will preserve the existing options but it probably will add new ones.
+Note: if you are updating your existing module -already using it- go to Settings > Modules and visit the settings of this module, and do at least one time a SAVE of settings with new configuration. It will preserve the existing options but it will probably add new ones.
 
 Complete information at: https://imasdeweb.com/index.php?pag=m_blog&gad=detalle_entrada&entry=39
 
-## Install new version of the module (update)
+## Install new version of the module (upgrade)
 
-Simply copy all the files of the module replacing the existing ones on /htdocs/custom/stocktransfers or /htdocs/stocktransfers depending on where you installed it. You will need to deactivate && re-activate the module on Setup > Modules if it's mentioned in the CHANGELOG file for your update. Usually it is not needed, but it's recommended.
+Simply copy all the files of the module replacing the existing ones on /htdocs/custom/stocktransfers (recommended) or /htdocs/stocktransfers depending on where you installed it. You will need to deactivate && re-activate the module on Setup > Modules if it's mentioned in the CHANGELOG file for your update. Usually it is not needed, but it's recommended.
 
 ## License
 
@@ -55,10 +55,10 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 ## Links
 
 - https://www.dolistore.com/de/moduleplugins/866-Stock-transfers.html
-- http://slides.com/caos30/dolibarr-stocktransfers-en
-- http://slides.com/caos30/dolibarr-stocktransfers
-- User guide: https://imasdeweb.com/index.php?pag=m_blog&gad=detalle_entrada&entry=39
-- Manual de usuario: https://imasdeweb.com/index.php?pag=m_blog&gad=detalle_entrada&entry=38
+- https://slides.com/caos30/dolibarr-stocktransfers-en
+- https://slides.com/caos30/dolibarr-stocktransfers
+- User guide (english): https://imasdeweb.com/index.php?pag=m_blog&gad=detalle_entrada&entry=39
+- Manual de usuario (castellano): https://imasdeweb.com/index.php?pag=m_blog&gad=detalle_entrada&entry=38
 
 ## Team
 
@@ -67,7 +67,15 @@ As developers & translators:
  - DEV & translation to CA, EN, ES: Sergi Rodrigues (from 2017)
  - Italian translation: Marco Civra (2019)
  - German translation: Hans-Dieter Schondelmaier (2020)
+ - French translation: Laurent Lebleu (2020)
 
 ## Versions Log
 
-See [CHANGELOG.TXT](https://github.com/caos30/dolibarr_stocktransfers_module/blob/master/CHANGELOG.TXT) file.
+See file **ChangeLog.md** or see [ChangeLog.md](https://github.com/caos30/dolibarr_stocktransfers_module/blob/master/ChangeLog.md) file.
+
+## ToDo list
+
+ - Better batch/lot management, specially regarding stock control
+ - increase user "virtual stock" for products "in transit" between 2 warehouses
+ - add "entity" field at "transfers" table to make the module compatible with "multi-company" Dolibarr use
+ 

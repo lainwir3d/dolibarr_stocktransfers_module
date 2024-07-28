@@ -22,11 +22,10 @@
  *	\file       htdocs/stocktransfers/admin/config.php
  *      \defgroup   stocktransfers Module Stock transfers
  *      \brief      Settings page
- *      \version    v 1.0 2017/11/20
  */
 
 // == ACTIVATE the ERROR reporting
-ini_set('display_errors',1);ini_set('display_startup_errors',1);error_reporting(-1);
+//ini_set('display_errors',1);ini_set('display_startup_errors',1);error_reporting(-1);
 
 define('NOCSRFCHECK',1);
 
@@ -55,6 +54,17 @@ if (!$user->admin) accessforbidden();
 $langs->load("admin");
 $langs->load("other");
 $langs->load("stocktransfers");
+$langs->load("languages");
+
+// == prepare languages translated for this module and get the translation for some keys
+	
+	$ex_lang = explode('_',$langs->getDefaultLang()); // en_US
+	$defaultLang = $ex_lang[0];
+	
+	include(STOCKTRANSFERS_MODULE_DOCUMENT_ROOT.'/lib/stocktransfers.lib.php');
+	$languages = scandir(STOCKTRANSFERS_MODULE_DOCUMENT_ROOT.'/langs');
+	$multi_translations = _multi_translation(array('STsettLab01def','stocktransfersPDF1','stocktransfersPDF8','stocktransfersPDF9','stocktransfersPDF10'),$languages);
+	//echo var_export($multi_translations,true);
 
 /***************************************************
  *
@@ -66,21 +76,28 @@ $langs->load("stocktransfers");
 
         if (!empty($_POST['config'])){
 
-            //echo var_export($_POST,true);die();
+            //echo _var_export($_POST,true);die();
 
             /* save incoming data */
                 $db->begin();
                 $error = 0;
-                foreach ($_POST['config'] as $K => $v){
-                    //$result = dolibarr_set_const($db, "STRIPE_TEST_PUBLISHABLE_KEY", GETPOST('STRIPE_TEST_PUBLISHABLE_KEY', 'alpha'), 'chaine', 0, '', $conf->entity);
-                    $result = dolibarr_set_const($db, $K, $v, 'chaine', 0, '', $conf->entity);
-            		if (! $result > 0) $error ++;
-                }
+                // = direct fields (like ['config']['STOCKTRANSFERS_MODULE_SETT_11'])
+					foreach ($_POST['config'] as $K => $v){
+						//$result = dolibarr_set_const($db, "STRIPE_TEST_PUBLISHABLE_KEY", GETPOST('STRIPE_TEST_PUBLISHABLE_KEY', 'alpha'), 'chaine', 0, '', $conf->entity);
+						$result = dolibarr_set_const($db, $K, $v, 'chaine', 0, '', $conf->entity);
+						if (! $result > 0) $error ++;
+					}
+                // = fields to be serialized (like ['s_translations']['STOCKTRANSFERS_MODULE_SETT_02'])
+					foreach ($_POST['s_translations'] as $K => $arr){
+						//$result = dolibarr_set_const($db, "STRIPE_TEST_PUBLISHABLE_KEY", GETPOST('STRIPE_TEST_PUBLISHABLE_KEY', 'alpha'), 'chaine', 0, '', $conf->entity);
+						$result = dolibarr_set_const($db, $K, json_encode($arr), 'chaine', 0, '', $conf->entity);
+						if (! $result > 0) $error ++;
+					}
 
             /* message to user */
             	if (! $error) {
             		$db->commit();
-            		setEventMessages($langs->trans("SetupSaved"), null, 'mesgs');
+            		setEventMessage($langs->trans("SetupSaved"), 'mesgs');
             	} else {
             		$db->rollback();
             		dol_print_error($db);
@@ -115,6 +132,11 @@ llxHeader('',$langs->trans('stocktransfersMenuTitle2').' :: '.$langs->trans('STt
     $head[$h][2] = 'tababout';
     $h++;
 
+    $head[$h][0] = 'changelog.php';
+    $head[$h][1] = 'Changelog';
+    $head[$h][2] = 'tabchangelog';
+    $h++;
+
 // = init current tab
 
     $html = new Form($db);
@@ -125,6 +147,33 @@ llxHeader('',$langs->trans('stocktransfersMenuTitle2').' :: '.$langs->trans('STt
 ?>
 
 <form id="stocktransfersForm" name="stocktransfersForm" action="<?= $_SERVER["PHP_SELF"] ?>" method="post">
+	<input type="hidden" name="token" value="<?= newToken() ?>" />
+	
+    <!-- ** PDF GENERAL ** SETTINGS -->
+
+    <?= load_fiche_titre($langs->trans("STsettTit04"),'','') ?>
+
+    <table class="noborder" style="width:auto;min-width:60%;">
+        <tr class="liste_titre">
+            <td width="50%"><?= $langs->trans("Name") ?></td>
+            <td width="50%"><?= $langs->trans("Value") ?></td>
+        </tr>
+        
+        <!-- number of decimals for stock quantities -->
+        <tr>
+            <td><?= $langs->trans("STsettLab14") ?></td>
+            <td>
+                <?php $value = !empty($conf->global->STOCKTRANSFERS_MODULE_SETT_14) ? $conf->global->STOCKTRANSFERS_MODULE_SETT_14 : '0' ?>
+                <select name="config[STOCKTRANSFERS_MODULE_SETT_14]">
+                    <option value="0" <?= $value=='0' ? "selected='selected'":"" ?>>0</option>
+                    <option value="1" <?= $value=='1' ? "selected='selected'":"" ?>>1</option>
+                    <option value="2" <?= $value=='2' ? "selected='selected'":"" ?>>2</option>
+                    <option value="3" <?= $value=='3' ? "selected='selected'":"" ?>>3</option>
+                    <option value="4" <?= $value=='4' ? "selected='selected'":"" ?>>4</option>
+                </select>
+            </td>
+        </tr>
+    </table>
 
     <!-- ** PDF GENERAL ** SETTINGS -->
 
@@ -135,6 +184,7 @@ llxHeader('',$langs->trans('stocktransfersMenuTitle2').' :: '.$langs->trans('STt
             <td width="35%"><?= $langs->trans("Name") ?></td>
             <td width="65%"><?= $langs->trans("Value") ?></td>
         </tr>
+        
         <!-- base font-size -->
         <tr>
             <td><?= $langs->trans("STsettLab10") ?></td>
@@ -152,6 +202,7 @@ llxHeader('',$langs->trans('stocktransfersMenuTitle2').' :: '.$langs->trans('STt
                 </select>
             </td>
         </tr>
+        
         <!-- font-family -->
         <tr>
             <td><?= $langs->trans("STsettLab11") ?></td>
@@ -160,6 +211,22 @@ llxHeader('',$langs->trans('stocktransfersMenuTitle2').' :: '.$langs->trans('STt
                 <select name="config[STOCKTRANSFERS_MODULE_SETT_11]">
                     <option value="sans-serif" <?= $value=='sans-serif' ? "selected='selected'":"" ?>>sans-serif</option>
                     <option value="serif" <?= $value=='serif' ? "selected='selected'":"" ?>>serif</option>
+                </select>
+            </td>
+        </tr>
+        
+        <!-- language translation -->
+        <tr>
+            <td><?= $langs->trans("STsettLab16") ?></td>
+            <td>
+                <?php $value = !empty($conf->global->STOCKTRANSFERS_MODULE_SETT_16) ? $conf->global->STOCKTRANSFERS_MODULE_SETT_16 : 'auto' ?>
+                <select name="config[STOCKTRANSFERS_MODULE_SETT_16]">
+                    <option value="auto" <?= $value=='auto' ? "selected='selected'":"" ?>><?= $langs->trans("STsettLab16opt1") ?></option>
+                    <?php foreach ($languages as $langcode){ 
+							if ($langcode=='.' || $langcode=='..') continue;
+					?>
+                    <option value="<?= $langcode ?>" <?= $value==$langcode ? "selected='selected'":"" ?>><?= $langcode.' | '.$langs->trans('Language_'.$langcode) ?></option>
+                    <?php } ?>
                 </select>
             </td>
         </tr>
@@ -174,25 +241,130 @@ llxHeader('',$langs->trans('stocktransfersMenuTitle2').' :: '.$langs->trans('STt
             <td width="35%"><?= $langs->trans("Name") ?></td>
             <td width="65%"><?= $langs->trans("Value") ?></td>
         </tr>
-        <!-- document title -->
+        
+        <!-- show logo -->
         <tr>
-            <td><?= $langs->trans("STsettLab01") ?></td>
+            <td><?= $langs->trans("STsettLab15") ?></td>
             <td>
-                <input name="config[STOCKTRANSFERS_MODULE_SETT_01]" type="text" class=""
-                    value="<?= $conf->global->STOCKTRANSFERS_MODULE_SETT_01 ?>"
-                    placeholder="<?= htmlentities($langs->trans("STsettExampleAbbrv").' '.$langs->trans("STsettLab01def")) ?>" />
-                &nbsp; <em><?= $langs->trans("STsettEmpty") ?></em>
+                <?php $value = !empty($conf->global->STOCKTRANSFERS_MODULE_SETT_15) ? $conf->global->STOCKTRANSFERS_MODULE_SETT_15 : 'Y' ?>
+                <select name="config[STOCKTRANSFERS_MODULE_SETT_15]">
+                    <option value="Y" <?= $value=='Y' ? "selected='selected'":"" ?>><?= $langs->trans('STyes') ?></option>
+                    <option value="N" <?= $value=='N' ? "selected='selected'":"" ?>><?= $langs->trans('STno') ?></option>
+                </select>
             </td>
         </tr>
+        
+        <!-- document title -->
+		<?php 
+				$s_translations = _json_decode_translation('STOCKTRANSFERS_MODULE_SETT_01',$defaultLang);
+		?>
+        <tr>
+            <td><?= $langs->trans("STsettLab01") ?><br /><em>(<?= $langs->trans("STsettEmpty") ?>)</em></td>
+            <td>
+				<table>
+					<?php 
+						$lang_rendered = array();
+						foreach ($languages as $langcode){ 
+							if ($langcode=='.' || $langcode=='..') continue;
+							$ex_lang = explode('_',$langcode);
+							$langcode0 = $ex_lang[0];
+							if (isset($lang_rendered[$langcode0])) continue; else $lang_rendered[$langcode0] = 1;
+					?>
+						<tr>
+							<td style="text-align:right;"><?= preg_replace('/\((.*)\)/','',$langs->trans('Language_'.$langcode)) ?> :</td>
+							<td>
+								<input name="s_translations[STOCKTRANSFERS_MODULE_SETT_01][<?= $langcode0 ?>]" type="text" class=""
+									value="<?= isset($s_translations[$langcode0]) ? $s_translations[$langcode0] : '' ?>"
+									placeholder="<?= str_replace('"','',$langs->trans("STsettExampleAbbrv").' '.(isset($multi_translations['STsettLab01def'][$langcode0]) ? $multi_translations['STsettLab01def'][$langcode0] : $langs->trans("STsettLab01def"))) ?>" />
+							</td>
+						</tr>
+					<?php } ?>
+				</table>
+				
+            </td>
+        </tr>
+        
         <!-- label for Reference -->
+		<?php 
+				$s_translations = _json_decode_translation('STOCKTRANSFERS_MODULE_SETT_02',$defaultLang);
+		?>
         <tr>
             <td><b><?= $langs->trans("STsettLab02") ?></b></td>
             <td>
-                <input name="config[STOCKTRANSFERS_MODULE_SETT_02]" type="text" class="fieldrequired"
-                    value="<?= !empty($conf->global->STOCKTRANSFERS_MODULE_SETT_02) ? $conf->global->STOCKTRANSFERS_MODULE_SETT_02 : $langs->trans('stocktransfersPDF1') ?>"
-                    placeholder="<?= htmlentities($langs->trans("STsettExampleAbbrv").' '.$langs->trans("STsettLab02def")) ?>" />
+				<table>
+					<?php 
+						$lang_rendered = array();
+						foreach ($languages as $langcode){ 
+							if ($langcode=='.' || $langcode=='..') continue;
+							$ex_lang = explode('_',$langcode);
+							$langcode0 = $ex_lang[0];
+							if (isset($lang_rendered[$langcode0])) continue; else $lang_rendered[$langcode0] = 1;
+					?>
+						<tr>
+							<td style="text-align:right;"><?= preg_replace('/\((.*)\)/','',$langs->trans('Language_'.$langcode)) ?> :</td>
+							<td>
+								<input name="s_translations[STOCKTRANSFERS_MODULE_SETT_02][<?= $langcode0 ?>]" type="text" class="fieldrequired"
+									value="<?= !empty($s_translations[$langcode0]) ? $s_translations[$langcode0] : (!empty($multi_translations['stocktransfersPDF1'][$langcode0]) ? $multi_translations['stocktransfersPDF1'][$langcode0] : $langs->trans("STsettLab02def")) ?>"
+									placeholder="<?= str_replace('"','',$langs->trans("STsettExampleAbbrv").' '.(!empty($multi_translations['stocktransfersPDF1'][$langcode0]) ? $multi_translations['stocktransfersPDF1'][$langcode0] : $langs->trans("STsettLab02def"))) ?>" />
+							</td>
+						</tr>
+					<?php } ?>
+				</table>
             </td>
         </tr>
+        
+        <!-- date format -->
+        <?php 
+			// date wilcards
+			$wildcards = '%Y %y %m %d %e %B %b %A %a';
+			$wildcards_key = explode(' ',$wildcards);
+			$wildcards_res = explode(' ',dol_print_date('2021-12-31 23:59:58',$wildcards));
+			
+			// time wilcards ----> @@@ todo: add optional fields DEPARTURE_TIME and ARRIVAL_TIME to the transfer object in database
+			/*
+			$wildcards_t = '%H %I %h %p %M %S';
+			$wildcards_key_t = explode(' ',$wildcards_t);
+			$wildcards_res_t = explode(' ',dol_print_date('2021-12-31 23:59:58',$wildcards_t));
+			*/
+			$s_translations = _json_decode_translation('STOCKTRANSFERS_MODULE_SETT_17',$defaultLang);
+			$default_format = !empty($s_translations[$defaultLang]) ? $s_translations[$defaultLang] : '%d / %m / %Y';
+		?>
+        <tr>
+            <td>
+				<p><?= $langs->trans("STsettLab17") ?></p>
+				<p style="text-align:center;font-size:0.8em;">
+					<?php 	foreach ($wildcards_key as $ii=>$key){
+								echo "<b>$key</b> &rarr; ".$wildcards_res[$ii]."<br />";
+							}
+					?>
+				</p>
+			</td>
+            <td>
+				<table>
+					<?php 
+						$lang_rendered = array();
+						foreach ($languages as $langcode){ 
+							if ($langcode=='.' || $langcode=='..') continue;
+							$ex_lang = explode('_',$langcode);
+							$langcode0 = $ex_lang[0];
+							if (isset($lang_rendered[$langcode0])) continue; else $lang_rendered[$langcode0] = 1;
+							$value = !empty($s_translations[$langcode0]) ? $s_translations[$langcode0] : $default_format;
+					?>
+						<tr>
+							<td style="text-align:right;"><?= preg_replace('/\((.*)\)/','',$langs->trans('Language_'.$langcode)) ?> :</td>
+							<td>
+								<input name="s_translations[STOCKTRANSFERS_MODULE_SETT_17][<?= $langcode0 ?>]" type="text" class="fieldrequired"
+									value="<?= $value ?>"
+									placeholder="<?= str_replace('"','',$langs->trans("STsettExampleAbbrv").' '.$default_format) ?>" />
+							</td>
+							<td><em><?= dol_print_date('2021-12-31 23:59:58',$value) ?></em></td>
+						</tr>
+					<?php } ?>
+				</table>
+                
+            </td>
+        </tr>
+        
         <!-- show the shipper name -->
         <tr>
             <td><?= $langs->trans("STsettLab03") ?></td>
@@ -205,6 +377,7 @@ llxHeader('',$langs->trans('stocktransfersMenuTitle2').' :: '.$langs->trans('STt
                 </select>
             </td>
         </tr>
+        
         <!-- show the number of packages -->
         <tr>
             <td><?= $langs->trans("STsettLab04") ?></td>
@@ -217,6 +390,7 @@ llxHeader('',$langs->trans('stocktransfersMenuTitle2').' :: '.$langs->trans('STt
                 </select>
             </td>
         </tr>
+        
         <!-- field to name the warehouse -->
         <tr>
             <td><?= $langs->trans("STsettLab07") ?></td>
@@ -228,6 +402,7 @@ llxHeader('',$langs->trans('stocktransfersMenuTitle2').' :: '.$langs->trans('STt
                 </select>
             </td>
         </tr>
+        
         <!-- position of warehouse's boxes -->
         <tr>
             <td><?= $langs->trans("STsettLab13") ?></td>
@@ -241,7 +416,7 @@ llxHeader('',$langs->trans('stocktransfersMenuTitle2').' :: '.$langs->trans('STt
         </tr>
     </table>
 
-    <!-- ** PDF PODUCT LIST ** SETTINGS -->
+    <!-- ** PDF PRODUCT LIST ** SETTINGS -->
 
     <br /><?= load_fiche_titre($langs->trans("STsettTit02"),'','') ?>
 
@@ -250,6 +425,7 @@ llxHeader('',$langs->trans('stocktransfersMenuTitle2').' :: '.$langs->trans('STt
             <td width="35%"><?= $langs->trans("Name") ?></td>
             <td width="65%"><?= $langs->trans("Value") ?></td>
         </tr>
+        
         <!-- show price -->
         <tr>
             <td><?= $langs->trans("STsettLab05") ?></td>
@@ -262,27 +438,42 @@ llxHeader('',$langs->trans('stocktransfersMenuTitle2').' :: '.$langs->trans('STt
                 </select>
             </td>
         </tr>
+        
+        <!-- show reference -->
+        <tr>
+            <td><?= $langs->trans("STsettLab18") ?></td>
+            <td>
+                <?php $value = !empty($conf->global->STOCKTRANSFERS_MODULE_SETT_18) ? $conf->global->STOCKTRANSFERS_MODULE_SETT_18 : 'Y' ?>
+                <select name="config[STOCKTRANSFERS_MODULE_SETT_18]">
+                    <option value="N"  <?= $value=='N'  ? "selected='selected'":"" ?>><?= $langs->trans('STno') ?></option>
+                    <option value="Y"  <?= $value=='Y'  ? "selected='selected'":"" ?>><?= strip_tags($langs->trans("STsettLab08opt2")) ?></option>
+                    <option value="Y2" <?= $value=='Y2' ? "selected='selected'":"" ?>><?= strip_tags($langs->trans("STsettLab08opt2b")) ?></option>
+                </select>
+            </td>
+        </tr>
+        
         <!-- show num. part / serial code -->
         <tr>
             <td><?= $langs->trans("STsettLab08") ?></td>
             <td>
                 <?php $value = !empty($conf->global->STOCKTRANSFERS_MODULE_SETT_08) ? $conf->global->STOCKTRANSFERS_MODULE_SETT_08 : 'M' ?>
                 <select name="config[STOCKTRANSFERS_MODULE_SETT_08]">
-                    <option value="N" <?= $value=='N' ? "selected='selected'":"" ?>><?= $langs->trans('STno') ?></option>
-                    <option value="Y" <?= $value=='Y' ? "selected='selected'":"" ?>><?= $langs->trans('STyes') ?></option>
-                    <option value="M" <?= $value=='M' ? "selected='selected'":"" ?>><?= strip_tags($langs->trans("STsettLab03opt3")) ?></option>
+                    <option value="N"  <?= $value=='N'  ? "selected='selected'":"" ?>><?= $langs->trans('STno') ?></option>
+                    <option value="Y"  <?= $value=='Y' || $value=='M' ? "selected='selected'":"" ?>><?= strip_tags($langs->trans("STsettLab08opt2")) ?></option>
+                    <option value="Y2" <?= $value=='Y2' ? "selected='selected'":"" ?>><?= strip_tags($langs->trans("STsettLab08opt2b")) ?></option>
                 </select>
             </td>
         </tr>
+        
         <!-- show barcode -->
         <tr>
             <td><?= $langs->trans("STsettLab09") ?></td>
             <td>
                 <?php $value = !empty($conf->global->STOCKTRANSFERS_MODULE_SETT_09) ? $conf->global->STOCKTRANSFERS_MODULE_SETT_09 : 'M' ?>
                 <select name="config[STOCKTRANSFERS_MODULE_SETT_09]">
-                    <option value="N" <?= $value=='N' ? "selected='selected'":"" ?>><?= $langs->trans('STno') ?></option>
-                    <option value="Y" <?= $value=='Y' ? "selected='selected'":"" ?>><?= $langs->trans('STyes') ?></option>
-                    <option value="M" <?= $value=='M' ? "selected='selected'":"" ?>><?= strip_tags($langs->trans("STsettLab03opt3")) ?></option>
+                    <option value="N"  <?= $value=='N'  ? "selected='selected'":"" ?>><?= $langs->trans('STno') ?></option>
+                    <option value="Y"  <?= $value=='Y' || $value=='M'  ? "selected='selected'":"" ?>><?= strip_tags($langs->trans("STsettLab08opt2")) ?></option>
+                    <option value="Y2" <?= $value=='Y2' ? "selected='selected'":"" ?>><?= strip_tags($langs->trans("STsettLab08opt2b")) ?></option>
                 </select>
             </td>
         </tr>
@@ -297,25 +488,64 @@ llxHeader('',$langs->trans('stocktransfersMenuTitle2').' :: '.$langs->trans('STt
             <td width="35%"><?= $langs->trans("Name") ?></td>
             <td width="65%"><?= $langs->trans("Value") ?></td>
         </tr>
+        
         <!-- show signatures -->
-        <?php for ($ii=1;$ii<4;$ii++){ ?>
+        <?php for ($ii=1;$ii<4;$ii++){ 
+			 
+				$s_translations = _json_decode_translation('STOCKTRANSFERS_MODULE_SETT_06'.$ii,$defaultLang);
+		?>
         <tr>
-            <td><?= $langs->trans("STsettLab06".$ii) ?></td>
+            <td><?= $langs->trans("STsettLab06".$ii) ?><br /><em>(<?= $langs->trans("STsettEmpty") ?>)</em></td>
             <td>
-                <input name="config[STOCKTRANSFERS_MODULE_SETT_06<?= $ii ?>]" type="text" class=""
-                    value="<?= $conf->global->{'STOCKTRANSFERS_MODULE_SETT_06'.$ii} ?>"
-                    placeholder="<?= htmlentities($langs->trans("STsettExampleAbbrv").' '.$langs->trans("stocktransfersPDF".($ii+7))) ?>" />
-                &nbsp; <em><?= $langs->trans("STsettEmpty") ?></em>
+				<table>
+					<?php 
+						$lang_rendered = array();
+						foreach ($languages as $langcode){ 
+							if ($langcode=='.' || $langcode=='..') continue;
+							$ex_lang = explode('_',$langcode);
+							$langcode0 = $ex_lang[0];
+							if (isset($lang_rendered[$langcode0])) continue; else $lang_rendered[$langcode0] = 1;
+					?>
+						<tr>
+							<td style="text-align:right;"><?= preg_replace('/\((.*)\)/','',$langs->trans('Language_'.$langcode)) ?> :</td>
+							<td>
+								<input name="s_translations[STOCKTRANSFERS_MODULE_SETT_06<?= $ii?>][<?= $langcode0 ?>]" type="text" class=""
+									value="<?= isset($s_translations[$langcode0]) ? $s_translations[$langcode0] : '' ?>"
+									placeholder="<?= str_replace('"','',$langs->trans("STsettExampleAbbrv").' '.(isset($multi_translations['stocktransfersPDF'.($ii+7)][$langcode0]) ? $multi_translations['stocktransfersPDF'.($ii+7)][$langcode0] : $langs->trans("stocktransfersPDF".($ii+7)))) ?>" />
+							</td>
+						</tr>
+					<?php } ?>
+				</table>
             </td>
         </tr>
         <?php } ?>
+        
         <!-- 3 line page footer -->
+		<?php 
+				$s_translations = _json_decode_translation('STOCKTRANSFERS_MODULE_SETT_12',$defaultLang);
+		?>
         <tr>
-            <td><?= $langs->trans("STsettLab12") ?></td>
+            <td><?= $langs->trans("STsettLab12") ?><br /><br /><em><?= $langs->trans("STsettLab12desc") ?></em></td>
             <td>
-                <textarea name="config[STOCKTRANSFERS_MODULE_SETT_12]" class="" style="width:95%;height:4em;"
-                    ><?= isset($conf->global->STOCKTRANSFERS_MODULE_SETT_12) ? $conf->global->STOCKTRANSFERS_MODULE_SETT_12 : '' ?></textarea>
-                <br />&nbsp; <em><?= $langs->trans("STsettLab12desc") ?></em>
+				<table style="width:auto;min-width:70%;">
+					<?php 
+						$lang_rendered = array();
+						foreach ($languages as $langcode){ 
+							if ($langcode=='.' || $langcode=='..') continue;
+							$ex_lang = explode('_',$langcode);
+							$langcode0 = $ex_lang[0];
+							if (isset($lang_rendered[$langcode0])) continue; else $lang_rendered[$langcode0] = 1;
+					?>
+						<tr>
+							<td style="text-align:right;"><?= preg_replace('/\((.*)\)/','',$langs->trans('Language_'.$langcode)) ?> :</td>
+							<td>
+								<textarea name="s_translations[STOCKTRANSFERS_MODULE_SETT_12][<?= $langcode0 ?>]" class="" style="width:95%;height:4em;"
+									><?= isset($s_translations[$langcode0]) ? $s_translations[$langcode0] : '' ?></textarea>
+							</td>
+						</tr>
+					<?php } ?>
+				</table>
+				
             </td>
         </tr>
 

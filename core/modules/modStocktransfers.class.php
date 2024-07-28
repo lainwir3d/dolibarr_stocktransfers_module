@@ -43,7 +43,7 @@ class modStockTransfers extends DolibarrModules
 	 */
 	function __construct($db)
 	{
-        global $langs,$conf;
+		global $langs,$conf;
 		$this->db = $db;
 
 		// Id for module (must be unique).
@@ -59,11 +59,11 @@ class modStockTransfers extends DolibarrModules
 		$this->name = preg_replace('/^mod/i','',str_replace('_',' ',get_class($this)));
 		// Module description used if translation string 'ModuleXXXDesc' not found (XXX is value MyModule)
 		$this->description = 'stocktransfersDescription';
-        $this->editor_name = 'Imasdeweb';
-        $this->editor_url = 'https://imasdeweb.com';
+	        $this->editor_name = 'Imasdeweb';
+	        $this->editor_url = 'https://imasdeweb.com';
 		$this->editor_web = 'imasdeweb.com';
 		// Possible values for version are: 'development', 'experimental', 'dolibarr' or version
-		$this->version = '1.14 [Dolibarr 5-11.0.x]';
+		$this->version = '1.31';
 		// Key used in llx_const table to save module status enabled/disabled (where MYMODULE is value of property name of module in uppercase)
 		$this->const_name = 'MAIN_MODULE_'.strtoupper($this->name);
 		// Where to store the module in setup page (0=common,1=interface,2=others,3=very specific)
@@ -71,7 +71,7 @@ class modStockTransfers extends DolibarrModules
 		// Name of image file used for this module.
 		// If file is in theme/yourtheme/img directory under name object_pictovalue.png, use this->picto='pictovalue'
 		// If file is in module/img directory under name object_pictovalue.png, use this->picto='pictovalue@module'
-		$this->picto='stocktransfers@stocktransfers';
+		$this->picto='dolly';//'stocktransfers@stocktransfers';
 
 		// Defined all module parts (triggers, login, substitutions, menus, css, etc...)
 		// for default path (eg: /mymodule/core/xxxxx) (0=disable, 1=enable)
@@ -96,9 +96,9 @@ class modStockTransfers extends DolibarrModules
 
 		// Dependencies
 		$this->hidden = false;			// A condition to hide module
-		$this->depends = array();		// List of modules id that must be enabled if this module is enabled
+		$this->depends = array('modProduct','modStock');		// List of modules id that must be enabled if this module is enabled
 		$this->requiredby = array();	// List of modules id to disable if this one is disabled
-		$this->phpmin = array(5,1);	// Minimum version of PHP required by module
+		$this->phpmin = array(5,6);	// Minimum version of PHP required by module
 		$this->need_dolibarr_version = array(5,0,-2);	// Minimum version of Dolibarr required by module
 		$this->langfiles = array("stocktransfers@stocktransfers");
 
@@ -231,7 +231,7 @@ class modStockTransfers extends DolibarrModules
 	function init($options='')
 	{
 
-    	$sql = array();
+    		$sql = array();
 
 		$result = $this->_load_tables('/stocktransfers/sql/');
 

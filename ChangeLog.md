@@ -2,8 +2,25 @@
    STOCKTRANSFERS MODULE CHANGELOG
 -------------------------------------
 
-## v 1.26 [???]
+## v 1.31 [2023-08-07]
+- New PDF settings: you can choose to render product reference, serial code, or barcode in different columns, instead of including all of them in the Description column.
+
+## v 1.30 [2023-06-22]
+- Bugfixed an issue showing error/confirmation messages to user after try an action. 
+
+## v 1.29 [2023-05-01]
+- Checked compatibility with Dolibarr 17.X
+
+## v 1.28 [2023-02-20]
+- Fixed a compatibility issue with safety TOKEN system used in Dolibarr since Dolibarr 12.X
+
+## v 1.27 [2022-09-30]
+- Checked compatibility with Dolibarr 16.X
+
+## v 1.26 [2022-05-11]
 - Fixed 2 missing translations on italian language.
+- Added column Ref (rowid) in the transfer list, and converted to button replacing old cog button.
+- Fixed the tooltip of the product when passing mouse over the label of a product included in a transfer.
 
 ## v 1.25 [2022-04-10]
 - Checked compatibility with Dolibarr 15.X

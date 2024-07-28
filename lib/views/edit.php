@@ -66,19 +66,29 @@
         $depots = array();
         $resql = $db->query("SELECT * FROM ".MAIN_DB_PREFIX."entrepot");
         if ($resql) {
-            //while($obj = $db->fetch_object($resql)) $depots[$obj->rowid] = $obj;
-            while($row = $resql->fetch_assoc()) $depots[] = $row;
+            while($row = $resql->fetch_assoc()){
+				$depots[$row['rowid']] = $row;
+				$depots[$row['rowid']]['tit1'] = !empty($row['ref']) ? $row['ref'] : '#'.$row['rowid'];
+				$depots[$row['rowid']]['tit2'] = !empty($row['lieu']) ? $row['lieu'] : (!empty($row['label']) ? $row['label'] : '');
+				$depots[$row['rowid']]['tit3'] = !empty($row['town']) ? $row['town'] : '';
+				//echo _var($row,'$row');
+			}
         }
 
-    // == load current stock at origin depot
+    // == load current stock at all depots, of the products included in this transfer
         $stock = $transfer->getStock();
 
     // == need to purchase more stock
         $buy_stock = '';
+        $depot1_stock = array();
+        $depot2_stock = array();
         if ($transfer->status == '0' && count($transfer->products) > 0){
             foreach($transfer->products as $pid => $p){
-                $missing_stock = intval($p['n']) - intval($stock[$pid]);
-                if (!isset($stock[$pid]) || $missing_stock > 0) {
+				// calculate stocks ond departure and destination 
+					$depot1_stock[$pid] = !empty($stock[$transfer->fk_depot1][$pid]) ? floatval($stock[$transfer->fk_depot1][$pid]) : 0;
+					$depot2_stock[$pid] = !empty($stock[$transfer->fk_depot2][$pid]) ? floatval($stock[$transfer->fk_depot2][$pid]) : 0;
+                $missing_stock = floatval($p['n']) - $depot1_stock[$pid];
+                if ($missing_stock > 0) {
                     if ($buy_stock!='') $buy_stock .= '_';
                     $buy_stock .= $pid.'-'.$missing_stock;
                 }
@@ -103,6 +113,13 @@
         $b_batch_enabled = $conf->productbatch->enabled
                             && (empty($conf->global->STOCKTRANSFERS_MODULE_SETT_08)
                                 || $conf->global->STOCKTRANSFERS_MODULE_SETT_08 != 'N') ? true : false;
+
+	// == include JS library to render HTML tooltips
+		if (!empty($conf->use_javascript_ajax)) {
+			print "\n".'<!-- Includes JS Footer of Dolibarr -->'."\n";
+			$ext = 'layout='.$conf->browser->layout.'&version='.urlencode(DOL_VERSION);
+			print '<script src="'.DOL_URL_ROOT.'/core/js/lib_foot.js.php?lang='.$langs->defaultlang.($ext ? '&'.$ext : '').'"></script>'."\n";
+		}
 ?>
 
 <style><?= str_replace(array(" ","\n","\t"),'',file_get_contents(__DIR__.'/styles.css')) ?></style>
@@ -110,16 +127,18 @@
 <!-- ========= header with section title ========= -->
 
 <?= load_fiche_titre( ($transfer->rowid > 0 ? $langs->trans('stocktransfersTransfer') : $langs->trans('stocktransfersNewTransfer')),
-                    '<a href="transfer_list.php?mainmenu=products&leftmenu=" class="button">'.$langs->trans('purchasesMenuTitle3').'</a>',
+                    '<a href="transfer_list.php?mainmenu=products&leftmenu=" class="button">'
+                    .(DOL_VERSION >= 12 && !defined('DISABLE_FONT_AWSOME') ? '<i class="fa fa-list"></i>&nbsp; ' : '')
+                    .$langs->trans('purchasesMenuTitle3').'</a>',
                     'title_products.png') ?>
 
 
-<div class='tabBar'>
+<div class='tabBar tabBarWithBottom'>
 
     <!-- ========= Form with the transfer details (dates, status, project, etc.) ========= -->
 
     <form action="<?= $_SERVER["PHP_SELF"] ?>" method="POST" name="transfer_card_form" id="transfer_card_form">
-        <input type="hidden" name="token" value="<?= $_SESSION['newtoken'] ?>" />
+        <input type="hidden" name="token" value="<?= newToken() ?>" />
         <input type="hidden" name="rowid" value="<?= !empty($transfer->rowid) ? $transfer->rowid : '' ?>" />
         <input type="hidden" name="action" value="save_card" />
         <input type="hidden" name="status" value="<?= $transfer->status ?>" />
@@ -128,112 +147,173 @@
         <?php
             $codemove=GETPOST('codemove');
             $labelmovement = GETPOST("label") ? GETPOST('label') : $langs->trans("StockTransfer").' '.dol_print_date($now,'%Y-%m-%d %H:%M');
+            if (DOL_VERSION >= 12 && !defined('DISABLE_FONT_AWSOME')){ // we can use fontwawesome icons 
+				$ic_warehouse = '<span class="fa fa-box-open"></span>';
+			}else{ 
+				$ic_warehouse = '<img src="'.DOL_URL_ROOT.'/theme/'.$conf->theme .'/img/object_company.png" border="0" />';
+			}
         ?>
-        <div class="underbanner clearboth"></div>
 
         <div class="sk-container">
             <div class="sk-eight sk-columns">
+				<div class="ficheaddleft">
+					<table class="border" style="width:100%;">
+						<?php if ($transfer->rowid > 0){ ?>
+						<tr>
+							<td class="titlefield fieldrequired"><?= $langs->trans('STID') ?></td>
+							<td>#<?= $transfer->rowid ?></td>
+						</tr>
+						<?php } ?>
+						<?php if (!empty($conf->projet->enabled)) { ?>
+						<tr>
+							<td class="titlefield"><?= $langs->trans('stocktransfersProject') ?></td>
+							<td><?= $formproject->select_projects((empty($conf->global->PROJECT_CAN_ALWAYS_LINK_TO_ALL_SUPPLIERS) ? $socid :    -1), $transfer->fk_project, 'fk_project', 0, 0, 1, 1) ?></td>
+						</tr>
+						<?php } ?>
+						<tr>
+							<td class="titlefield fieldrequired"><?= $langs->trans('WarehouseSource') ?></td>
+							<td><?php 
+									if ($transfer->status == '0'){
+										
+										// select control
+										echo $formproduct->selectWarehouses($transfer->fk_depot1, 'fk_depot1', 'warehouseopen,warehouseinternal', 1, 0, 0, '', 0, 0, array(), 'minwidth200imp') ;
+										
+									}else{
+										
+										// hidden input
+										echo "<input type='hidden' name='fk_depot1' id='fk_depot1' value='".$transfer->fk_depot1 ."' />";
+									}
+										
+									// title & link to warehouse
+									if (!empty($transfer->fk_depot1) && !is_null($transfer->fk_depot1)){
+								?>
+									&nbsp; <a href="<?= DOL_URL_ROOT.'/product/stock/card.php?id='.$transfer->fk_depot1 ?>"><?= $ic_warehouse.' '.$depots[$transfer->fk_depot1]['tit1'] ?></a>
+									 · <?= $depots[$transfer->fk_depot1]['tit2'] ?>
+									 <?= !empty($depots[$transfer->fk_depot1]['tit3']) ? ' · <em>'.$depots[$transfer->fk_depot1]['tit3'].'</em>' : '' ?>
+									 
+								 <?php } ?>
+							</td>
+						</tr>
+						<tr>
+							<td class="titlefield fieldrequired"><?= $langs->trans('WarehouseTarget') ?></td>
+							<td><?php 
+									if ($transfer->status == '0'){
+										
+										// select control
+										echo $formproduct->selectWarehouses($transfer->fk_depot2, 'fk_depot2', 'warehouseopen,warehouseinternal', 1, 0, 0, '', 0, 0, array(), 'minwidth200imp') ;
+										
+									}else{
+										
+										// hidden input
+										echo "<input type='hidden' name='fk_depot2' id='fk_depot2' value='".$transfer->fk_depot2 ."' />";
+									}
+										
+									// title & link to warehouse & hidden input
+									if (!empty($transfer->fk_depot2) && !is_null($transfer->fk_depot2)){
+								?>
+										&nbsp; <a href="<?= DOL_URL_ROOT.'/product/stock/card.php?id='.$transfer->fk_depot2 ?>"><?= $ic_warehouse.' '.$depots[$transfer->fk_depot2]['tit1'] ?></a>
+										 · <?= $depots[$transfer->fk_depot2]['tit2'] ?>
+										 <?= !empty($depots[$transfer->fk_depot2]['tit3']) ? ' · <em>'.$depots[$transfer->fk_depot2]['tit3'].'</em>' : '' ?>
+										 
+								 <?php } ?>
+							</td>
+						</tr>
+						<tr>
+							<td class="titlefield"><?= $langs->trans('stocktransfersDate1') ?></td>
+							<td><?= $form->select_date(!empty($transfer->date1) ? $db->jdate($transfer->date1) : '','date1',0,0,0,"transfer_card_form",1,1) ?></td>
+						</tr>
+						<tr>
+							<td class="titlefield"><?= $langs->trans('stocktransfersDate2') ?></td>
+							<td>
+								<?php if ($transfer->status > '0'){ ?>
+								<?= $form->select_date(!empty($transfer->date2) ? $db->jdate($transfer->date2): '','date2',0,0,1,"transfer_card_form",1,1) ?></td>
+								<?php } ?>
+						</tr>
+						<tr>
+							<td class="titlefield"><?= $langs->trans("stocktransfersShipper") ?></td>
+							<td>
+								<input type="text" name="shipper" style="width:200px;" maxlength="255" value="<?= dol_escape_htmltag($transfer->shipper) ?>">
+							</td>
+						</tr>
+						<tr>
+							<td class="titlefield"><?= $langs->trans("stocktransfersNPackages") ?></td>
+							<td>
+								<input type="text" name="n_package" style="width:200px;" maxlength="20" value="<?= dol_escape_htmltag($transfer->n_package) ?>">
+							</td>
+						</tr>
+						<tr>
+							<td class="titlefield"><?= $langs->trans("STinventorycode") ?></td>
+							<td>
+								<input type="text" name="inventorycode" style="width:300px;" maxlength="128" value="<?= dol_escape_htmltag($transfer->inventorycode) ?>">
+							</td>
+						</tr>
+						<?php if ($transfer->rowid > 0){ ?>
+						<tr>
+							<td><?= $langs->trans("STLabelMovement") ?></td>
+							<td>
+								<input type="text" name="label"  style="width:300px;" maxlength="255" value="<?= dol_escape_htmltag($labelmovement) ?>">
+							</td>
+						</tr>
+						<tr>
+							<td class="titlefield fieldrequired"><?= $langs->trans("STStatus") ?></td>
+							<td>
+								<?php
+									$label = $langs->trans('stocktransfersStatus'.$transfer->status).' '.$transfer->status;
+									if (DOL_VERSION >= 12 && !defined('DISABLE_FONT_AWSOME')){
+										$icon_class = $transfer->status == '1' ? 'fa-truck' : ( $transfer->status == '2' ? 'fa-check-circle' : 'fa-file-o') ;
+										print '<i class="fa fa-lg '.$icon_class.'" style="opacity:0.4;color:inherit;" title="'.$label.'"></i>';
+									}else{
+										$picto = $transfer->status == '1' ? '3' : ( $transfer->status == '2' ? '4' : '0') ;
+										print img_picto($label,'statut'.$picto);
+									}
+									print ' '. $langs->trans('stocktransfersStatus'.$transfer->status);
+								?>
 
-                <table class="border" style="width:100%;">
-                    <?php if ($transfer->rowid > 0){ ?>
-                    <tr>
-                        <td class="titlefield fieldrequired"><?= $langs->trans('STID') ?></td>
-                        <td>#<?= $transfer->rowid ?></td>
-                    </tr>
-                    <?php } ?>
-                    <?php if (!empty($conf->projet->enabled)) { ?>
-                    <tr>
-                        <td class="titlefield"><?= $langs->trans('stocktransfersProject') ?></td>
-                        <td><?= $formproject->select_projects((empty($conf->global->PROJECT_CAN_ALWAYS_LINK_TO_ALL_SUPPLIERS) ? $socid :    -1), $transfer->fk_project, 'fk_project', 0, 0, 1, 1) ?></td>
-                    </tr>
-                    <?php } ?>
-                    <tr>
-                        <td class="titlefield fieldrequired"><?= $langs->trans('WarehouseSource') ?></td>
-                        <td><?= $formproduct->selectWarehouses($transfer->fk_depot1, 'fk_depot1', 'warehouseopen,warehouseinternal', 1, 0, 0, '', 0, 0, array(), 'minwidth200imp') ?></td>
-                    </tr>
-                    <tr>
-                        <td class="titlefield fieldrequired"><?= $langs->trans('WarehouseTarget') ?></td>
-                        <td><?= $formproduct->selectWarehouses($transfer->fk_depot2, 'fk_depot2', 'warehouseopen,warehouseinternal', 1, 0, 0, '', 0, 0, array(), 'minwidth200imp') ?></td>
-                    </tr>
-                    <tr>
-                        <td class="titlefield"><?= $langs->trans('stocktransfersDate1') ?></td>
-                        <td><?= $form->select_date(!empty($transfer->date1) ? $db->jdate($transfer->date1) : '','date1',0,0,0,"transfer_card_form",1,1) ?></td>
-                    </tr>
-                    <tr>
-                        <td class="titlefield"><?= $langs->trans('stocktransfersDate2') ?></td>
-                        <td>
-                            <?php if ($transfer->status > '0'){ ?>
-                            <?= $form->select_date(!empty($transfer->date2) ? $db->jdate($transfer->date2): '','date2',0,0,1,"transfer_card_form",1,1) ?></td>
-                            <?php } ?>
-                    </tr>
-                    <tr>
-                        <td class="titlefield"><?= $langs->trans("stocktransfersShipper") ?></td>
-                        <td>
-                            <input type="text" name="shipper" style="width:200px;" maxlength="255" value="<?= dol_escape_htmltag($transfer->shipper) ?>">
-                        </td>
-                    </tr>
-                    <tr>
-                        <td class="titlefield"><?= $langs->trans("stocktransfersNPackages") ?></td>
-                        <td>
-                            <input type="text" name="n_package" style="width:200px;" maxlength="20" value="<?= dol_escape_htmltag($transfer->n_package) ?>">
-                        </td>
-                    </tr>
-                    <tr>
-                        <td class="titlefield"><?= $langs->trans("STinventorycode") ?></td>
-                        <td>
-                            <input type="text" name="inventorycode" style="width:300px;" maxlength="128" value="<?= dol_escape_htmltag($transfer->inventorycode) ?>">
-                        </td>
-                    </tr>
-                    <?php if ($transfer->rowid > 0){ ?>
-                    <tr>
-                        <td><?= $langs->trans("STLabelMovement") ?></td>
-                        <td>
-                            <input type="text" name="label"  style="width:300px;" maxlength="255" value="<?= dol_escape_htmltag($labelmovement) ?>">
-                        </td>
-                    </tr>
-                    <tr>
-                        <td class="titlefield fieldrequired"><?= $langs->trans("STStatus") ?></td>
-                        <td>
-                            <?php
-                                $picto = $transfer->status == '1' ? '3' : ( $transfer->status == '2' ? '4' : '0') ;
-                                print img_picto($langs->trans('stocktransfersStatus'.$transfer->status),'statut'.$picto)
-                                . ' '. $langs->trans('stocktransfersStatus'.$transfer->status) ?>
+								<!-- change status to sent button -->
+								<?php if ($buy_stock=='' && $transfer->rowid > 0 && $transfer->status == '0' && count($transfer->products) > 0){ ?>
+								<a href="#" class="button" onclick="js_set_as_sent();return false;">
+									<?= $langs->trans('stocktransfersSetStatusSent') ?>
+									<?= DOL_VERSION >= 12 && !defined('DISABLE_FONT_AWSOME') ? ' &nbsp;<i class="fa fa-truck"></i>':'' ?>
+								</a>
+								<?php } ?>
 
-                            <!-- change status to sent button -->
-                            <?php if ($buy_stock=='' && $transfer->rowid > 0 && $transfer->status == '0' && count($transfer->products) > 0){ ?>
-                            <a href="#" class="button" onclick="js_set_as_sent();return false;"><?= $langs->trans('stocktransfersSetStatusSent') ?></a>
-                            <?php } ?>
+								<!-- change status to received button -->
+								<?php if ($transfer->rowid > 0 && $transfer->status == '1'){ ?>
+								<a href="#" class="button" onclick="js_set_as_received();return false;">
+									<?= $langs->trans('stocktransfersSetStatusReceived') ?>
+									<?= DOL_VERSION >= 12 && !defined('DISABLE_FONT_AWSOME') ? ' &nbsp;<i class="fa fa-check-circle"></i>':'' ?>
+								</a>
+								<?php } ?>
 
-                            <!-- change status to received button -->
-                            <?php if ($transfer->rowid > 0 && $transfer->status == '1'){ ?>
-                            <a href="#" class="button" onclick="js_set_as_received();return false;"><?= $langs->trans('stocktransfersSetStatusReceived') ?></a>
-                            <?php } ?>
+								<!-- change status back to draft button -->
+								<?php if ($transfer->status == '1' || $transfer->status == '2'){ ?>
+								<a href="#" class="button" onclick="js_set_as_draft();return false;">
+									<?= $langs->trans('stocktransfersSetStatusDraft') ?>
+									<?= DOL_VERSION >= 12 && !defined('DISABLE_FONT_AWSOME') ? ' &nbsp; <i class="fa fa-rotate-left"></i>':'' ?>
+								</a>
+								<?php } ?>
 
-                            <!-- change status back to draft button -->
-                            <?php if ($transfer->status == '1' || $transfer->status == '2'){ ?>
-                            <a href="#" class="button" onclick="js_set_as_draft();return false;"><?= $langs->trans('stocktransfersSetStatusDraft') ?></a>
-                            <?php } ?>
-
-                        </td>
-                    </tr>
-                    <?php } ?>
-                </table>
-
+							</td>
+						</tr>
+						<?php } ?>
+					</table>
+					<p style="padding:0;margin:0;">&nbsp;</p>
+				</div>
             </div> <!-- end sk-column -->
 
             <div class="sk-four sk-columns">
-
-                <table class="border" style="width:95%;">
-                    <tr>
-                        <td class="titlefield"><?= $langs->trans('STprivateNote') ?><br />
-                        <textarea name="private_note" class="note_textarea"><?= $transfer->private_note ?></textarea></td>
-                    </tr>
-                    <tr>
-                        <td class="titlefield"><?= $langs->trans('STpdfNote') ?><br />
-                        <textarea name="pdf_note" class="note_textarea"><?= $transfer->pdf_note ?></textarea></td>
-                    </tr>
-                </table>
-
+				<div class="ficheaddleft">
+					<table class="border" style="width:95%;">
+						<tr>
+							<td class="titlefield"><?= $langs->trans('STprivateNote') ?><br />
+							<textarea name="private_note" class="note_textarea"><?= $transfer->private_note ?></textarea></td>
+						</tr>
+						<tr>
+							<td class="titlefield"><?= $langs->trans('STpdfNote') ?><br />
+							<textarea name="pdf_note" class="note_textarea"><?= $transfer->pdf_note ?></textarea></td>
+						</tr>
+					</table>
+				</div>
             </div><!-- end sk-column -->
 
         </div> <!-- end sk-container -->
@@ -244,16 +324,54 @@
         <div class="center">
 
             <!-- save button -->
-            <a href="#" class="button" onclick="js_validate_form('transfer_card_form');return false;"><?= $transfer->rowid > 0 ? dol_escape_htmltag($langs->trans('STSave')) : dol_escape_htmltag($langs->trans('CreateDraft')) ?></a>
+            <a href="#" class="button" onclick="js_validate_form('transfer_card_form');return false;">
+				<?= DOL_VERSION >= 12 && !defined('DISABLE_FONT_AWSOME') ? '<i class="fa fa-download"></i>&nbsp; ':'' ?>
+				<?= $transfer->rowid > 0 ? dol_escape_htmltag($langs->trans('STSave')) : dol_escape_htmltag($langs->trans('CreateDraft')) ?>
+				</a>
 
             <!-- delete button -->
             <?php if ($transfer->rowid > 0 && $transfer->status == '0'){ ?>
-            <a href="#" class="button" onclick="js_delete_transfer();return false;"><?= dol_escape_htmltag($langs->trans('STDelete')) ?></a>
+            <a href="#" class="button" onclick="js_delete_transfer();return false;">
+				<?= DOL_VERSION >= 12 && !defined('DISABLE_FONT_AWSOME') ? '<i class="fa fa-trash" style="color:white;"></i>&nbsp; ':'' ?>
+				<?= dol_escape_htmltag($langs->trans('STDelete')) ?>
+			</a>
             <?php } ?>
 
-            <!-- pdf button -->
+            <!-- hidden language selector for PDF -->
+			<?php 
+				$languages = scandir(STOCKTRANSFERS_MODULE_DOCUMENT_ROOT.'/langs'); 
+				$def_lang = !empty($conf->global->STOCKTRANSFERS_MODULE_SETT_16) ? $conf->global->STOCKTRANSFERS_MODULE_SETT_16 : 'auto';
+				if ($def_lang=='auto') $def_lang = $langs->getDefaultLang();
+				$PDFlang = !empty($transfer->lang) ? $transfer->lang : $def_lang;
+				$langs->load("languages"); 
+			?>
+			<select id="sel_pdf_langcode" style="text-align:center;display:none;"
+					onclick="$('#bt_download_pdf').attr('href','transfer_pdf.php?id=<?= $transfer->rowid ?>&l='+$(this).val());">
+				<?php foreach ($languages as $langcode){ 
+						if ($langcode=='.' || $langcode=='..') continue;
+				?>
+				<option value="<?= $langcode ?>" <?= $langcode==$PDFlang ? "selected='selected'":"" ?>><?= $langs->trans('Language_'.$langcode) ?></option>
+				<?php } ?>
+			</select>
+
+            <!-- pdf download button -->
             <?php if ($transfer->rowid > 0 && count($transfer->products) > 0){ ?>
-            <a href="transfer_pdf.php?id=<?= $transfer->rowid ?>" class="button" target="_blank"><img src="img/pdf.png" style="margin-bottom: -2px;" /> <?= dol_escape_htmltag($langs->trans('stocktransfersPDFdownload')) ?></a>
+            <a  id="bt_download_pdf"
+				href="transfer_pdf.php?id=<?= $transfer->rowid ?>&l=<?= $PDFlang ?>" 
+				class="button" target="_blank">
+				<?= DOL_VERSION >= 12 && !defined('DISABLE_FONT_AWSOME')  
+								? '<i class="fa fa-file-pdf"></i>&nbsp; '
+								: '<img src="img/pdf.png" style="margin-bottom: -2px;" />' ?>
+				<?= dol_escape_htmltag($langs->trans('stocktransfersPDFdownload')) ?>
+			</a>
+			
+            <!-- pdf language button -->
+            <a  href="#" onclick="$('#sel_pdf_langcode').toggle();return false;" style="display:inline-block;vertical-align:middle;">
+				<?= DOL_VERSION >= 12 && !defined('DISABLE_FONT_AWSOME')  
+								? '<i class="fa fa-2x fa-language"></i>'
+								: '<img src="img/lang.png" style="margin-bottom: -2px;" />' ?>
+			</a>
+            
             <?php } ?>
             <!-- purchase proceed button -->
             <?php if ($buy_stock!='' && $conf->purchases->enabled){
@@ -263,8 +381,9 @@
                         else
                             $purchases_root = DOL_URL_ROOT.'/purchases';
             ?>
-            <a href="<?= $purchases_root ?>/purchase_edit.php?mainmenu=commercial&leftmenu=&products=<?= $buy_stock . $fk_project ?>" class="classfortooltip button butActionDelete"
-               title="<?= htmlentities($langs->trans('stocktransfersTooltip1')) ?>"><?= $langs->trans('stocktransfersGoShopping') ?></a>
+            <a  href="<?= $purchases_root ?>/purchase_edit.php?mainmenu=commercial&leftmenu=&products=<?= $buy_stock . $fk_project ?>" 
+				class="classfortooltip button butActionDelete"
+                title="<?= htmlentities($langs->trans('stocktransfersTooltip1')) ?>"><?= $langs->trans('stocktransfersGoShopping') ?></a>
             <?php } ?>
 
             <!-- =========== easter egg - to show the raw data of the element (mainly for dev debug) ======== -->
@@ -293,7 +412,7 @@
 
     <br />
     <form action="<?= $_SERVER["PHP_SELF"] ?>" method="POST" id="transfer_product_form">
-        <input type="hidden" name="token" value="<?= $_SESSION['newtoken']  ?>">
+        <input type="hidden" name="token" value="<?= newToken() ?>" />
         <input type="hidden" name="rowid" value="<?= !empty($transfer->rowid) ? $transfer->rowid : '' ?>" />
         <input type="hidden" name="action" value="add_line">
         <input type="hidden" name="del_pid" value="">
@@ -308,9 +427,12 @@
                      print getTitleFieldOfList($langs->trans('STBatch'),0,$_SERVER["PHP_SELF"],'',$param,'','class="tagtd maxwidthonsmartphone"',$sortfield,$sortorder);
                     }
                     print getTitleFieldOfList($langs->trans('STnote'),0,$_SERVER["PHP_SELF"],'',$param,'','align="left" class="tagtd maxwidthonsmartphone"',$sortfield,$sortorder);
-                    print getTitleFieldOfList($langs->trans('STQty'),0,$_SERVER["PHP_SELF"],'',$param,'','align="center" class="tagtd maxwidthonsmartphone"',$sortfield,$sortorder);
+                    $ic_truck = '<i class="fa fa-dolly"></i>';
+                    print getTitleFieldOfList($langs->trans('STQty').'<br />'.$ic_truck,0,$_SERVER["PHP_SELF"],'',$param,'','align="center" class="tagtd maxwidthonsmartphone"',$sortfield,$sortorder);
                     if ($transfer->status == '0'){
-                        print getTitleFieldOfList($langs->trans('STStock'),0,$_SERVER["PHP_SELF"],'',$param,'','align="center" class="tagtd maxwidthonsmartphone"',$sortfield,$sortorder);
+						$ic_house = '<i class="fa fa-home"></i>';
+                        print getTitleFieldOfList($langs->trans('STStock').'<br /><span style="font-size:0.8em;">'.$langs->trans('WarehouseSource').'</span>',0,$_SERVER["PHP_SELF"],'',$param,'','align="center" class="tagtd maxwidthonsmartphone"',$sortfield,$sortorder);
+                        print getTitleFieldOfList($langs->trans('STStock').'<br /><span style="font-size:0.8em;">'.$langs->trans('WarehouseTarget').'</span>',0,$_SERVER["PHP_SELF"],'',$param,'','align="center" class="tagtd maxwidthonsmartphone"',$sortfield,$sortorder);
                     }
                     print getTitleFieldOfList('',0);
                 ?>
@@ -322,7 +444,7 @@
                 <?php foreach($transfer->products as $pid => $p){
 
                     $productstatic->fetch($pid);
-                    $needed_stock_this = !isset($stock[$pid]) || intval($stock[$pid]) < intval($p['n']);
+                    $needed_stock_this = $depot1_stock[$pid] < floatval($p['n']);
                 ?>
 
                 <tr <?= $bc[$var] ?> class='product' data-pid='<?= $pid ?>'
@@ -343,25 +465,30 @@
                         <em><?= $p['m'] ?></em>
                     </td>
                     <td style='text-align:center;'>
-                        <?= $p['n'] ?>
+                        <?= _qty($p['n']) ?>
                     </td>
                     <?php if ($transfer->status == '0'){ ?>
                     <td style='text-align:center;'>
-                        <?= isset($stock[$pid]) ? $stock[$pid] : '-' ?>
+                        <?= $depot1_stock[$pid] > 0 ? _qty($depot1_stock[$pid]) : '-' ?>
                         <?php if ($needed_stock_this){ ?>
-                            <a href="<?= DOL_URL_ROOT ?>/product/stock/product.php?id=<?= $pid ?>&action=correction&id_entrepot=<?= $transfer->fk_depot1 ?>"
+                            <a href="<?= DOL_URL_ROOT ?>/product/stock/product.php?id=<?= $pid ?>&action=correction&id_entrepot=<?= $transfer->fk_depot1 ?>&token=<?= newToken() ?>"
                                 title="<?= str_replace('"','',($langs->trans('stocktransfersErrorMsg03')).' '.($langs->trans('stocktransfersAdjustStock'))) ?>"
-                                target="_blank" style="display:inline-block;height:25px;margin:0px 4px;">
-                                <?= img_warning('') ?></a>
+                                target="_blank" style="display:inline-block;margin:0px 4px;min-width:0;" class="button">
+                                <?= DOL_VERSION >= 12 && !defined('DISABLE_FONT_AWSOME') ? "<i class='fa fa-warning'></i>" : img_warning('') ?></a>
                         <?php } ?>
+                    </td>
+                    <td style='text-align:center;'>
+                        <?= $depot2_stock[$pid] > 0 ? _qty($depot2_stock[$pid]) : '-' ?>
                     </td>
                     <?php } ?>
                     <td>
                         <?php if ($transfer->status == '0' ){ ?>
-                            <a href="#" onclick="js_edit_line('<?= $pid ?>');return false;" style="display:inline-block;height:25px;float:left;margin:0px 4px;">
-                                <?= img_edit($langs->trans("STedit")) ?></a>
-                            <a href="#" onclick="js_del_line('<?= $pid ?>');return false;" style="display:inline-block;height:25px;float:left;margin:0px 4px;">
-                                <?= img_delete($langs->trans("STRemove")) ?></a>
+                            <a href="#" onclick="js_edit_line('<?= $pid ?>');return false;" style="display:inline-block;float:left;margin:3px;min-width:0;" 
+									class="button" title="<?= str_replace('"','',$langs->trans("STedit"))?>">
+                                <?= DOL_VERSION >= 12 && !defined('DISABLE_FONT_AWSOME') ? "<i class='fa fa-pencil'></i>" : img_edit($langs->trans("STedit")) ?></a>
+                            <a href="#" onclick="js_del_line('<?= $pid ?>');return false;" style="display:inline-block;float:left;margin:3px;min-width:0;" 
+									class="button" title="<?= str_replace('"','',$langs->trans("STRemove"))?>">
+                                <?= DOL_VERSION >= 12 && !defined('DISABLE_FONT_AWSOME') ? "<i class='fa fa-trash' style='color:white;'></i>" : img_delete($langs->trans("STRemove")) ?></a>
                         <?php } ?>
                     </td>
                 </tr>
@@ -395,12 +522,15 @@
 
                     <!-- ========= Quantity ========= -->
                     <td style='text-align:center;' class=''>
-                        <input type="text" size="3" class="flat" name="n" value="<?= !empty($_POST['n']) ? $_POST['n'] : '' ?>">
+                        <input type="text" size="4" class="flat" name="n" value="<?= !empty($_POST['n']) ? $_POST['n'] : '' ?>">
                     </td>
 
                     <!-- ========= Automatic Stock ========= -->
                     <td style='text-align:center;' class=''>
-                        <span id='new_line_stock'></span>
+                        <span id='new_line_stock1'></span>
+                    </td>
+                    <td style='text-align:center;' class=''>
+                        <span id='new_line_stock2'></span>
                     </td>
 
                     <!-- ========= Button to add ========= -->
@@ -424,6 +554,9 @@
 </div>
 
 <script>
+
+    var b_batch_enabled = <?= $b_batch_enabled ? 'true':'false' ?>;
+
     $(document).ready(function(){
         $('#transfer_product_form').bind('submit',function(){
             /* we don't check nothing if we're deleting a line  */
@@ -455,20 +588,18 @@
         var url_json = 'json.php?action=get_stock'
                         +'&pid='+pid
                         +'&wid1=<?= $transfer->fk_depot1 ?>'
-                        +'&wid2=<?= $transfer->fk_depot2 ?>';
+                        +'&wid2=<?= $transfer->fk_depot2 ?>'
+                        +'&token=<?= currentToken() ?>';
         console.log(url_json);
         $.getJSON(
             url_json,
             function(data){
                 console.log(data);
                 if (data.ok=='1'){
-                    var stock1 = data.stock['stock1'] ? parseInt(data.stock['stock1']) : 0;
-                    var stock2 = data.stock['stock2'] ? parseInt(data.stock['stock2']) : 0;
-                    var html = "";
-                    html += "<a title=\"<?= str_replace('"','',$langs->trans('stocktransfersPDF2')) ?>\"><b>"+stock1+"</b></a>";
-                    html += " / "
-                    html += "<a title=\"<?= str_replace('"','',$langs->trans('stocktransfersPDF3')) ?>\"><b>"+stock2+"</b></a>";
-                    $('#new_line_stock').html(html);
+                    var stock1 = data.stock['stock1'] ? data.stock['stock1'] : 0;
+                    var stock2 = data.stock['stock2'] ? data.stock['stock2'] : 0;
+                    $('#new_line_stock1').html('<b>'+stock1+'</b>');
+                    $('#new_line_stock2').html('<b>'+stock2+'</b>');
                 }
             }
         );
@@ -488,7 +619,7 @@
             alert('Product select box not found, please contact developer.');
             return;
         }
-        var qty = parseInt($('#new_line input[name=n]').val());
+        var qty = parseFloat($('#new_line input[name=n]').val());
 
         /* check product */
         var msg = '';
@@ -502,19 +633,21 @@
         }
 
         /* check quantity */
-        if (isNaN(qty) || qty<1) {
+        if (isNaN(qty) || qty<0) {
             msg += "<?= html_entity_decode(str_replace('"','',$langs->trans('STErrorMsg06'))) ?> ";
             $('#transfer_product_form input[name=n]').addClass('alertedfield');
         }
 
         /* check batch/lot serial number if this feature is enabled on Dolibarr */
-        <?php if ($b_batch_enabled) { ?>
+        if (b_batch_enabled===true){
+
             var batch = $('#transfer_product_form input[name=batch]').val();
             if (batch.trim()=='') {
                 msg += "<?= html_entity_decode(str_replace('"','',$langs->trans('STErrorMsg08'))) ?> ";
                 $('#transfer_product_form input[name=batch]').addClass('alertedfield');
             }
-        <?php } ?>
+
+        }
 
         /* if wrong data, then show a warning message to user */
         if (msg!=''){
@@ -526,7 +659,7 @@
 
     function js_delete_transfer(){
         if (confirm("<?= str_replace('"','',html_entity_decode($langs->trans('stocktransfersDelSure','',0))) ?>")){
-            document.location = 'transfer_edit.php?mainmenu=products&action=delete_transfer&rowid=<?= $transfer->rowid ?>';
+            document.location = 'transfer_edit.php?mainmenu=products&action=delete_transfer&rowid=<?= $transfer->rowid ?>&token=<?= newToken() ?>';
         }
     }
 
@@ -539,12 +672,12 @@
             $('#new_line input[name=search_pid]').val(tr.attr('data-ref'));
             $('#new_line input[name=pid]').val(pid);
         }
-        <?php if ($b_batch_enabled){ ?>
-        $('#new_line input[name=batch]').val(tr.attr('data-batch'));
-	<?php } ?>
-	$('#transfer_product_form input[name=action]').val('edit_line');
+        if (b_batch_enabled===true){
+            $('#new_line input[name=batch]').val(tr.attr('data-batch'));
+        }
+        $('#transfer_product_form input[name=action]').val('edit_line');
         $('#new_line input[name=n]').val(tr.attr('data-n'));
-        $('#new_line textarea[name=m]').val($('#ST_pid_'+pid+'_m').html());
+        $('#new_line textarea[name=m]').val($('#ST_pid_'+pid+'_m').html().replace('&amp;','&'));
         /* exchange save buttons */
         $('#ST_add').hide();
         $('#ST_save').hide().fadeIn();
@@ -621,6 +754,13 @@
                     }
             });
 
+        /* check warehouses (source and destiny) are not the same */
+            if ($('#fk_depot1').val() == $('#fk_depot2').val()){
+                $('#fk_depot1').closest('tr').addClass('alertedcontainer');
+                $('#fk_depot2').closest('tr').addClass('alertedcontainer');
+                all_fine = false;
+            }
+
         /* submit form */
             if (all_fine){
                 $('#'+form_id).submit();
@@ -659,4 +799,4 @@
 <?php
     // End of page
     $db->close();
-    llxFooter('$Date: 2009/03/09 11:28:12 $ - $Revision: 1.8 $');
+    llxFooter('');
