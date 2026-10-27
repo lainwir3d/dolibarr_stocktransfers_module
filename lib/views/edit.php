@@ -306,11 +306,11 @@
 					<table class="border" style="width:95%;">
 						<tr>
 							<td class="titlefield"><?= $langs->trans('STprivateNote') ?><br />
-							<textarea name="private_note" class="note_textarea"><?= $transfer->private_note ?></textarea></td>
+							<textarea name="private_note" class="note_textarea"><?= dol_htmlentities($transfer->private_note) ?></textarea></td>
 						</tr>
 						<tr>
 							<td class="titlefield"><?= $langs->trans('STpdfNote') ?><br />
-							<textarea name="pdf_note" class="note_textarea"><?= $transfer->pdf_note ?></textarea></td>
+							<textarea name="pdf_note" class="note_textarea"><?= dol_htmlentities($transfer->pdf_note) ?></textarea></td>
 						</tr>
 					</table>
 				</div>
@@ -449,20 +449,20 @@
 
                 <tr <?= $bc[$var] ?> class='product' data-pid='<?= $pid ?>'
                     data-ref="<?= $productstatic->ref ?>"
-                    data-batch="<?= $b_batch_enabled ? $p['b']:'' ?>"
+                    data-batch="<?= $b_batch_enabled ? dol_htmlentities($p['b']):'' ?>"
                     data-n="<?= $p['n'] ?>"
                     >
                     <td>
                         <?= $productstatic->getNomUrl(1).' - '.$productstatic->label ?>
-                        <div id="ST_pid_<?= $pid ?>_m" style="display:none;"><?= isset($p['m']) ? $p['m']:'' ?></div>
+                        <div id="ST_pid_<?= $pid ?>_m" style="display:none;"><?= isset($p['m']) ? dol_htmlentities($p['m']):'' ?></div>
                     </td>
                     <?php if ($b_batch_enabled){ ?>
                     <td>
-                        <?= $p['b'] ?>
+                        <?= dol_htmlentities($p['b']) ?>
                     </td>
                     <?php } ?>
                     <td style='text-align:left;'>
-                        <em><?= $p['m'] ?></em>
+                        <em><?= dol_htmlentities($p['m']) ?></em>
                     </td>
                     <td style='text-align:center;'>
                         <?= _qty($p['n']) ?>
@@ -511,18 +511,18 @@
                     <?php if ($b_batch_enabled) { ?>
                     <td>
                         <input type="text" name="batch" class="flat maxwidth50onsmartphone" style="width:100%;"
-                            value="<?= !empty($_POST['batch']) ? $_POST['batch'] : '' ?>">
+                            value="<?= !empty($_POST['batch']) ? dol_htmlentities($_POST['batch']) : '' ?>">
                     </td>
                     <?php } ?>
 
                     <!-- ========= Note (Message) ========= -->
                     <td style='text-align:center;' class=''>
-                        <textarea size="3" class="flat" name="m" style="width:100%;"><?= !empty($_POST['m']) ? $_POST['m'] : '' ?></textarea>
+                        <textarea size="3" class="flat" name="m" style="width:100%;"><?= !empty($_POST['m']) ? dol_htmlentities($_POST['m']) : '' ?></textarea>
                     </td>
 
                     <!-- ========= Quantity ========= -->
                     <td style='text-align:center;' class=''>
-                        <input type="text" size="4" class="flat" name="n" value="<?= !empty($_POST['n']) ? $_POST['n'] : '' ?>">
+                        <input type="text" size="4" class="flat" name="n" value="<?= !empty($_POST['n']) ? dol_htmlentities($_POST['n']) : '' ?>">
                     </td>
 
                     <!-- ========= Automatic Stock ========= -->

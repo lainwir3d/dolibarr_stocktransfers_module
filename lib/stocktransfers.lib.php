@@ -63,7 +63,9 @@ function _qty($floatval){
 }
 
 function _render_view($viewname,Array $vars){
-    global $langs, $db, $conf;
+    // The views read these globals directly (Dolibarr pages are flat
+    // scripts); keep them visible inside the include's function scope.
+    global $langs, $db, $conf, $user, $bc, $contextpage, $action;
     // == passed vars
         if (count($vars)>0){
             foreach($vars as $__k__=>$__v__){
