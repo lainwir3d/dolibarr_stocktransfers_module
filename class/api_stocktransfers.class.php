@@ -65,8 +65,6 @@ class Stocktransfers extends DolibarrApi
 	 *
 	 * @param   int         $id        ID of the transfer
 	 * @return  Object                  The transfer with its product lines
-	 *
-	 * @url     GET /stocktransfers/{id}
 	 */
 	public function get($id)
 	{
@@ -94,8 +92,6 @@ class Stocktransfers extends DolibarrApi
 	 * @param   int         $page       Page number
 	 * @param   string      $sqlfilters Other criteria to filter answers. Example: "(t.status:=:'1')"
 	 * @return  array                   Array of transfer objects
-	 *
-	 * @url     GET /stocktransfers
 	 */
 	public function index($sortfield = 't.rowid', $sortorder = 'ASC', $limit = 100, $page = 0, $sqlfilters = '')
 	{
@@ -157,8 +153,6 @@ class Stocktransfers extends DolibarrApi
 	 *
 	 * @param   array       $request_data  Request data: fk_depot1, fk_depot2 and label are expected; optional lines, shipper, dates...
 	 * @return  int                        ID of the created transfer (always as draft)
-	 *
-	 * @url     POST /stocktransfers
 	 */
 	public function post($request_data = null)
 	{
@@ -207,8 +201,6 @@ class Stocktransfers extends DolibarrApi
 	 * @param   int         $id            ID of the transfer
 	 * @param   array       $request_data  Request data
 	 * @return  Object                     The updated transfer
-	 *
-	 * @url     PUT /stocktransfers/{id}
 	 */
 	public function put($id, $request_data = null)
 	{
@@ -254,7 +246,7 @@ class Stocktransfers extends DolibarrApi
 	 * @param   array       $request_data  {product_id, qty, batch?, note?}
 	 * @return  Object                     The updated transfer
 	 *
-	 * @url     POST /stocktransfers/{id}/lines
+	 * @url     POST {id}/lines
 	 */
 	public function postLine($id, $request_data = null)
 	{
@@ -297,7 +289,7 @@ class Stocktransfers extends DolibarrApi
 	 * @param   int         $product_id    ID of the product line to remove
 	 * @return  Object                     The updated transfer
 	 *
-	 * @url     DELETE /stocktransfers/{id}/lines
+	 * @url     DELETE {id}/lines
 	 */
 	public function deleteLine($id, $product_id)
 	{
@@ -334,8 +326,6 @@ class Stocktransfers extends DolibarrApi
 	 *
 	 * @param   int         $id            ID of the transfer
 	 * @return  array                       Without the deleted transfer
-	 *
-	 * @url     DELETE /stocktransfers/{id}
 	 */
 	public function delete($id)
 	{
