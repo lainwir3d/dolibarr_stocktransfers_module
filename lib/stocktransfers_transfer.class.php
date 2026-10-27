@@ -102,6 +102,17 @@ class StockTransfer extends CommonObject
                     return -3;
             }
 
+        // Validate the dates: they are assembled on the page from
+        // POSTed year/month/day fields, so accept the Ymd shape only.
+            if (!empty($this->date1) && !preg_match('/^\d{8}$/', (string) $this->date1)) {
+                    $this->error = "ErrorBadParameter date1";
+                    return -3;
+            }
+            if (!empty($this->date2) && !preg_match('/^\d{8}$/', (string) $this->date2)) {
+                    $this->error = "ErrorBadParameter date2";
+                    return -3;
+            }
+
         // Insert request
             $sql = "INSERT INTO ".MAIN_DB_PREFIX."stocktransfers_transfers(";
 
@@ -126,8 +137,8 @@ class StockTransfer extends CommonObject
             $sql.= " ".($this->inventorycode ? "'".$this->db->escape($this->inventorycode)."'" : 'NULL').",";
             $sql.= " ".($this->fk_depot1 ? "'".intval($this->fk_depot1)."'" : '0' ).",";
             $sql.= " ".($this->fk_depot2 ? "'".intval($this->fk_depot2)."'" : '0').",";
-            $sql.= " ".($this->date1 ? "'".$this->date1."'" : 'NULL').",";
-            $sql.= " ".($this->date2 ? "'".$this->date2."'" : 'NULL').",";
+            $sql.= " ".($this->date1 ? "'".$this->db->escape($this->date1)."'" : 'NULL').",";
+            $sql.= " ".($this->date2 ? "'".$this->db->escape($this->date2)."'" : 'NULL').",";
             $sql.= " ".($this->shipper ? "'".$this->db->escape($this->shipper)."'" : 'NULL').",";
             $sql.= " ".($this->private_note ? "'".$this->db->escape($this->private_note)."'" : 'NULL').",";
             $sql.= " ".($this->pdf_note ? "'".$this->db->escape($this->pdf_note)."'" : 'NULL').",";
@@ -163,7 +174,7 @@ class StockTransfer extends CommonObject
                     else
                     {
                             $this->db->commit();
-                return $this->id;
+                return $this->rowid;
                     }
     }
 
@@ -176,6 +187,8 @@ class StockTransfer extends CommonObject
     function fetch($id)
     {
     	global $langs;
+        $id = (int) $id; // Never trust the caller with the rowid.
+        if ($id <= 0) return -1;
         $sql = "SELECT * FROM ".MAIN_DB_PREFIX."stocktransfers_transfers";
         $sql.= " WHERE rowid = ".$id;
     	dol_syslog(get_class($this)."::fetch sql=".$sql, LOG_DEBUG);
@@ -229,6 +242,23 @@ class StockTransfer extends CommonObject
                     return -3;
             }
 
+        // The status is a posted value: whitelist the three legal states.
+            if (!in_array((string) $this->status, array('0', '1', '2'), true)) {
+                    $this->error = "ErrorBadParameter status";
+                    return -3;
+            }
+
+        // Validate the dates: they are assembled on the page from
+        // POSTed year/month/day fields, so accept the Ymd shape only.
+            if (!empty($this->date1) && !preg_match('/^\d{8}$/', (string) $this->date1)) {
+                    $this->error = "ErrorBadParameter date1";
+                    return -3;
+            }
+            if (!empty($this->date2) && !preg_match('/^\d{8}$/', (string) $this->date2)) {
+                    $this->error = "ErrorBadParameter date2";
+                    return -3;
+            }
+
         // Update request
             $sql = "UPDATE ".MAIN_DB_PREFIX."stocktransfers_transfers SET ";
 
@@ -238,9 +268,9 @@ class StockTransfer extends CommonObject
             $sql.= "fk_depot1=".($this->fk_depot1 ? "'".intval($this->fk_depot1)."'" : '0' ).",";
             $sql.= "fk_depot2=".($this->fk_depot2 ? "'".intval($this->fk_depot2)."'" : '0' ).",";
             if (!empty($this->date1))
-            $sql.= "date1=STR_TO_DATE('".str_replace('-','',$this->date1)."','%Y%m%d'), "; // 20190613
+            $sql.= "date1=STR_TO_DATE('".$this->db->escape(str_replace('-','',$this->date1))."','%Y%m%d'), "; // 20190613
             if (!empty($this->date2))
-            $sql.= "date2=STR_TO_DATE('".str_replace('-','',$this->date2)."','%Y%m%d'), "; // 20190613
+            $sql.= "date2=STR_TO_DATE('".$this->db->escape(str_replace('-','',$this->date2))."','%Y%m%d'), "; // 20190613
             $sql.= "shipper=".($this->shipper ? "'".$this->db->escape($this->shipper)."'" : 'NULL').",";
             $sql.= "n_package=".($this->n_package ? "'".$this->db->escape($this->n_package)."'" : 'NULL').",";
             $sql.= "s_products='".$this->db->escape(is_array($this->products) ? serialize($this->products) : serialize(array()))."',";
@@ -248,9 +278,9 @@ class StockTransfer extends CommonObject
             $sql.= "private_note='".$this->db->escape($this->private_note)."',";
             $sql.= "pdf_note='".$this->db->escape($this->pdf_note)."',";
             $sql.= "n_products='".count($this->products)."',";
-            $sql.= "lang='".$this->db->escape($this->lang)."'";
+            $sql.= "lang='".$this->db->escape(is_null($this->lang) ? '' : $this->lang)."'";
 
-            $sql.= " WHERE rowid=".$this->rowid;
+            $sql.= " WHERE rowid=".((int) $this->rowid);
 
             //echo "<h3>sql=$sql</h3>";
 
@@ -293,7 +323,7 @@ class StockTransfer extends CommonObject
         $error=0;
 
         $sql = "DELETE FROM ".MAIN_DB_PREFIX."stocktransfers_transfers";
-        $sql.= " WHERE rowid=".$this->rowid;
+        $sql.= " WHERE rowid=".((int) $this->rowid);
 
         $this->db->begin();
 
@@ -368,6 +398,11 @@ class StockTransfer extends CommonObject
                                 if ($result < 0){
                                         $error++;
                                         $_SESSION['EventMessages'][] = array($product->errors, $product->errorss, 'errors');
+                                }elseif (!$reverse){
+                                        // Capture the movement we just created immediately, scoped to
+                                        // this product/warehouse/type (never a global "last N" guess:
+                                        // concurrent movements used to steal each other's ids).
+                                        $this->products[$pid]['m'.$depot] = $this->getJustCreatedMovementId($pid, $id_sw, $typemov, $invcode);
                                 }
                             }else if ($depot == '2'){
                                 // Add stock
@@ -378,6 +413,8 @@ class StockTransfer extends CommonObject
                                 if ($result < 0){
                                         $error++;
                                         $_SESSION['EventMessages'][] = array($product->errors, $product->errorss, 'errors');
+                                }elseif (!$reverse){
+                                        $this->products[$pid]['m'.$depot] = $this->getJustCreatedMovementId($pid, $id_tw, $typemov, $invcode);
                                 }
                             }
                         }
@@ -403,6 +440,8 @@ class StockTransfer extends CommonObject
                                 if ($result < 0){
                                         $error++;
                                         $_SESSION['EventMessages'][] = array($product->errors, $product->errorss, 'errors');
+                                }elseif (!$reverse){
+                                        $this->products[$pid]['m'.$depot] = $this->getJustCreatedMovementId($pid, $id_sw, $typemov, $invcode);
                                 }
                             }else if ($depot == '2'){
                                 // Add stock
@@ -413,6 +452,8 @@ class StockTransfer extends CommonObject
                                 if ($result < 0){
                                         $error++;
                                         $_SESSION['EventMessages'][] = array($product->errors, $product->errorss, 'errors');
+                                }elseif (!$reverse){
+                                        $this->products[$pid]['m'.$depot] = $this->getJustCreatedMovementId($pid, $id_tw, $typemov, $invcode);
                                 }
                             }
                         }
@@ -426,25 +467,10 @@ class StockTransfer extends CommonObject
 
 	if (! $error){
 
-                // == update the stock movements IDs stored at $transfer->products array
-                    if (!$reverse){
-                        // = get IDs of stock movements
-                            $fk_entrepot = $depot == '1' ? $this->fk_depot1 : $this->fk_depot2;
-                            $sql = "SELECT * FROM ".MAIN_DB_PREFIX."stock_mouvement";
-                            $sql.= " ORDER BY rowid DESC";
-                            $sql.= " LIMIT ".count($this->products);
-                            $last_stock_movements = array();
-                            $resql = $this->db->query($sql);
-                            if ($resql) {
-                                while($mov = $resql->fetch_assoc()){
-                                    $pid = $mov['fk_product'];
-                                    if ($mov['fk_entrepot']==$fk_entrepot
-                                            && !empty($this->products[$pid])){
-                                        $this->products[$pid]['m'.$depot] = $mov['rowid'];
-                                    }
-                                }
-                            }
-                    }else{
+                // The non-reverse movement ids were captured per line while
+                // creating the movements (see getJustCreatedMovementId); the
+                // reverse path empties them.
+                    if ($reverse){
                         // = empty the IDs of the stock movements
                         foreach ($this->products as $pid=>$p){
                             $this->products[$pid]['m'.$depot] = '';
@@ -463,6 +489,28 @@ class StockTransfer extends CommonObject
 		$_SESSION['EventMessages'][] = array($langs->trans("Error"), null, 'errors');
                 return -1;
 	}
+    }
+
+    /**
+     *  \brief  Identify the stock movement just created by correct_stock on
+     *          this connection, scoped to this product/warehouse/type —
+     *          instead of the previous global "last N movements" guess that
+     *          attributed wrong movement ids under concurrency.
+     *  \return int   The movement rowid, 0 when it cannot be found
+     */
+    function getJustCreatedMovementId($fk_product, $fk_entrepot, $type, $inventorycode)
+    {
+        $sql = "SELECT rowid FROM ".MAIN_DB_PREFIX."stock_mouvement";
+        $sql.= " WHERE fk_product = ".((int) $fk_product)." AND fk_entrepot = ".((int) $fk_entrepot);
+        $sql.= " AND type = ".((int) $type);
+        if ($inventorycode !== '') $sql.= " AND inventorycode = '".$this->db->escape($inventorycode)."'";
+        $sql.= " ORDER BY rowid DESC";
+        $sql.= " LIMIT 1";
+        $resql = $this->db->query($sql);
+        if (!$resql) return 0;
+        $obj = $this->db->fetch_object($resql);
+        $this->db->free($resql);
+        return $obj ? (int) $obj->rowid : 0;
     }
 
 
