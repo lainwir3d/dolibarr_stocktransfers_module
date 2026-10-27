@@ -33,8 +33,8 @@ dol_include_once('/stocktransfers/lib/stocktransfers_transfer.class.php');
 /**
  * API class for stock transfers
  *
+ * @access protected
  * @class  DolibarrApiAccess {@requires user,external}
- * @access public
  */
 class Stocktransfers extends DolibarrApi
 {
