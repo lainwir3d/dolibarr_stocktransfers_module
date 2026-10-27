@@ -307,7 +307,7 @@ if ($action == 'delete_transfer') {
         accessforbidden();
     }
 
-
+    $countappended = false;
     //var_dump($_POST);die();
 
     if (empty($_POST['add_pid'])){
@@ -355,7 +355,6 @@ if ($action == 'delete_transfer') {
 		setEventMessage($langs->trans("ErrorGlobalVariableUpdater2",'product'), 'errors');
     }else{
 
-        $transfer->products[$_POST['del_pid']];
         $new_products = array();
         foreach($transfer->products as $pid=>$p){
             if ($pid != trim($_POST['del_pid'])) $new_products[$pid] = $p;

@@ -220,14 +220,14 @@
 						</tr>
 						<tr>
 							<td class="titlefield"><?= $langs->trans('stocktransfersDate1') ?></td>
-							<td><?= $form->select_date(!empty($transfer->date1) ? $db->jdate($transfer->date1) : '','date1',0,0,0,"transfer_card_form",1,1) ?></td>
+							<td><?= $form->selectDate(!empty($transfer->date1) ? $db->jdate($transfer->date1) : '','date1',0,0,0,"transfer_card_form",1,1) ?></td>
 						</tr>
 						<tr>
 							<td class="titlefield"><?= $langs->trans('stocktransfersDate2') ?></td>
 							<td>
-								<?php if ($transfer->status > '0'){ ?>
-								<?= $form->select_date(!empty($transfer->date2) ? $db->jdate($transfer->date2): '','date2',0,0,1,"transfer_card_form",1,1) ?></td>
-								<?php } ?>
+							<?php if ($transfer->status > '0'){ ?>
+								<?= $form->selectDate(!empty($transfer->date2) ? $db->jdate($transfer->date2): '','date2',0,0,1,"transfer_card_form",1,1) ?></td>
+							<?php } ?>
 						</tr>
 						<tr>
 							<td class="titlefield"><?= $langs->trans("stocktransfersShipper") ?></td>
@@ -444,7 +444,7 @@
                 <?php foreach($transfer->products as $pid => $p){
 
                     $productstatic->fetch($pid);
-                    $needed_stock_this = $depot1_stock[$pid] < floatval($p['n']);
+                    $needed_stock_this = isset($depot1_stock[$pid]) && $depot1_stock[$pid] < floatval($p['n']);
                 ?>
 
                 <tr <?= $bc[$var] ?> class='product' data-pid='<?= $pid ?>'
