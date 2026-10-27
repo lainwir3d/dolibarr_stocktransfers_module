@@ -625,7 +625,11 @@ class StockTransfer extends CommonObject
      */
     function getStockOneProduct($product_id,$warehouse_id1,$warehouse_id2){
         $stock = array();
-        if (intval($product_id) > 0 && intval($warehouse_id1) > 0 && intval($warehouse_id2) > 0){
+        // Cast at the sink: never trust the caller with identifiers.
+        $product_id = (int) $product_id;
+        $warehouse_id1 = (int) $warehouse_id1;
+        $warehouse_id2 = (int) $warehouse_id2;
+        if ($product_id > 0 && $warehouse_id1 > 0 && $warehouse_id2 > 0){
                 $sql = "SELECT fk_product,reel,fk_entrepot ";
         		$sql.= " FROM ".MAIN_DB_PREFIX."product_stock";
         		$sql.= " WHERE fk_entrepot IN ('".$warehouse_id1."','".$warehouse_id2."')";

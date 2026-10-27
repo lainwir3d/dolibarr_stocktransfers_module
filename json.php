@@ -26,7 +26,7 @@
  */
 
 // == ACTIVATE the ERROR reporting
-ini_set('display_errors',1);ini_set('display_startup_errors',1);error_reporting(-1);
+// (debug settings removed: never ship display_errors in production code)
 
 if (!defined('NOTOKENRENEWAL')) {
 	define('NOTOKENRENEWAL', 1); // Disables token renewal
@@ -66,9 +66,9 @@ $langs->load("stocktransfers@stocktransfers");
 
     switch ($action){
         case 'get_stock':
-            $product_id = GETPOST('pid', '0');
-            $warehouse_id1 = GETPOST('wid1', '0');
-            $warehouse_id2 = GETPOST('wid2', '0');
+            $product_id = GETPOST('pid', 'int');
+            $warehouse_id1 = GETPOST('wid1', 'int');
+            $warehouse_id2 = GETPOST('wid2', 'int');
             $transfer = new StockTransfer($db);
             $stock = $transfer->getStockOneProduct($product_id,$warehouse_id1,$warehouse_id2);
             echo json_encode(array('ok'=>'1','stock'=>$stock));

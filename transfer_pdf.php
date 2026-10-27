@@ -75,18 +75,19 @@ include_once(DOL_DOCUMENT_ROOT."/core/class/html.formfile.class.php");
 
 // == data object
     global $transfer;
-    $transfer_id = GETPOST('id', '0');
+    $transfer_id = GETPOST('id', 'int');
     $transfer = new StockTransfer($db);
     if ($transfer_id > 0) {
         $ret = $transfer->fetch($transfer_id);
     }
 
 // == multilanguage settings
+    // A PDF download is a GET: it must never write to the database. The
+    // per-transfer PDF language is now read-only here; the stored `lang`
+    // value changes only through the transfer card.
 	$previous_PDFlang = $transfer->lang;
 	if (!empty($_GET['l'])){
-		$PDF_langcode = trim($_GET['l']);
-		$transfer->lang = $PDF_langcode;
-		$transfer->update();
+		$PDF_langcode = substr(preg_replace('/[^a-z_]/i', '', trim($_GET['l'])), 0, 5);
 
 	}else if ($previous_PDFlang!=''){
 		$PDF_langcode = $previous_PDFlang;
