@@ -93,12 +93,11 @@ $langs->load("stocktransfers@stocktransfers");
  * 
 ****************************************************/
     
-if ($_REQUEST["action"] == 'delete') {
+    if (GETPOST('action','aZ09') == 'delete') {
 
 
 }else {
-    $_SESSION['parsedData'] = "";
-    $_SESSION['toConciliate'] = "";
+    // (bank-statement-import leftovers removed)
 }
     
     

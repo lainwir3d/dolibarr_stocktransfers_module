@@ -106,6 +106,7 @@
 						$nsearch = $fieldname." < '".date('Y-m-d H:i:s',$ts)."'";
 					}	
                  }else{
+                    // The field name is whitelisted upstream; escape the value.
                     $nsearch = natural_search($ff, $vv, 0, 1);
 				 }
                  if (!empty($nsearch) && $nsearch != '()') $where[] =  $nsearch;
@@ -113,10 +114,14 @@
             if (count($where)>0) $sql .= ' WHERE '.implode(' AND ',$where);
 			
         // == ORDER
+            // Whitelist: the sort fields and direction come from the request.
+            $sortablefields = array('rowid', 'label', 'inventorycode', 'shipper', 'status', 'fk_project', 'fk_depot1', 'fk_depot2', 'ts_create');
             $sql.= ' ORDER BY ';
             $listfield = explode(',',$sortfield);
-            foreach ($listfield as $key => $value)
-                $sql.= $listfield[$key].' '.$sortorder.',';
+            foreach ($listfield as $key => $value){
+                if (!in_array($value, $sortablefields, true)) $value = 'rowid';
+                $sql.= $value.' '.(strtoupper($sortorder) == 'ASC' ? 'ASC' : 'DESC').',';
+            }
             $sql.= ' rowid DESC ';
 
         // == Count total nb of records
@@ -199,7 +204,7 @@
 
         // == add GETPOST search params
         foreach ($fsearch as $ff=>$vv){
-            $param.='&search_'.$ff.'='.urlencode($vv);
+            $param.='&search_'.urlencode($ff).'='.urlencode($vv);
         }
 
         $form = new Form($db);
@@ -412,7 +417,7 @@
                                     : (!empty($depots[$ele[$f]]['lieu']) ? $depots[$ele[$f]]['lieu']
                                     : (!empty($depots[$ele[$f]]['label']) ? $depots[$ele[$f]]['label']
                                     : '#'.$depots[$ele[$f]]['rowid'] ));
-                                $wh_tooltip = str_replace('"','',$depots[$ele[$f]]['lieu'].' ('.$depots[$ele[$f]]['town'].')');
+                                $wh_tooltip = dol_htmlentities(($depots[$ele[$f]]['lieu'] !== null ? $depots[$ele[$f]]['lieu'] : '').' '.(($depots[$ele[$f]]['town'] !== null ? $depots[$ele[$f]]['town'] : '') !== '' ? '('.$depots[$ele[$f]]['town'].')' : ''));
                                 print '<td>';
                                 
                                 if (DOL_VERSION >= 12 && !defined('DISABLE_FONT_AWSOME')){ // we can use fontwawesome icons
@@ -423,7 +428,7 @@
 										 .'		<img src="'.DOL_URL_ROOT.'/theme/'.$conf->theme.'/img/object_company.png" border="0" /></a>';
 								}
 								
-                                print ' <a href="'.DOL_URL_ROOT.'/product/stock/card.php?id='.$ele[$f].'" title="'.$wh_tooltip.'">'.$depot_label.'</a></td>';
+                                print ' <a href="'.DOL_URL_ROOT.'/product/stock/card.php?id='.$ele[$f].'" title="'.$wh_tooltip.'">'.dol_htmlentities($depot_label).'</a></td>';
                             }else{
                                 print '<td>#'.$ele[$f].'</td>';
                             }
@@ -444,7 +449,7 @@
 									print ' <a href="'.DOL_URL_ROOT.'/projet/card.php?id='.$ele[$f].'" '
 										 .'		><img src="'.DOL_URL_ROOT.'/theme/'.$conf->theme.'/img/object_project.png" border="0"></a>';
 								}
-                                print ' <a href="'.DOL_URL_ROOT.'/projet/card.php?id='.$ele[$f].'">'.$projects[$ele[$f]]['title'].'</a></td>';
+                                print ' <a href="'.DOL_URL_ROOT.'/projet/card.php?id='.$ele[$f].'">'.dol_htmlentities($projects[$ele[$f]]['title']).'</a></td>';
                             }else{
                                 print '<td>#'.$ele[$f].'</td>';
                             }
@@ -514,7 +519,7 @@
                             }
 
                         }else{
-                            print '<td>'.(isset($ele[$f]) ? $ele[$f] : '').'</td>';
+                            print '<td>'.(isset($ele[$f]) ? dol_htmlentities($ele[$f]) : '').'</td>';
                         }
 
                     }
