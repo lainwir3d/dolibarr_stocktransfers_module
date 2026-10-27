@@ -1,4 +1,4 @@
-CREATE TABLE `llx_stocktransfers_transfers` (
+CREATE TABLE IF NOT EXISTS `llx_stocktransfers_transfers` (
   `rowid` int(11) NOT NULL auto_increment,
   `ts_create` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `fk_user_author` int(11) DEFAULT NULL,
@@ -18,5 +18,8 @@ CREATE TABLE `llx_stocktransfers_transfers` (
   `private_note` text COLLATE utf8_unicode_ci NULL,
   `pdf_note` text COLLATE utf8_unicode_ci NULL,
   `lang` varchar(5) COLLATE utf8_unicode_ci DEFAULT '',
-  PRIMARY KEY  (`rowid`)
+  PRIMARY KEY  (`rowid`),
+  KEY `idx_stocktransfers_status` (`status`),
+  KEY `idx_stocktransfers_fk_depot1` (`fk_depot1`),
+  KEY `idx_stocktransfers_fk_depot2` (`fk_depot2`)
 ) ENGINE=innodb AUTO_INCREMENT=1 ;

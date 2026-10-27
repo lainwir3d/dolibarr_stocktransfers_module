@@ -233,7 +233,12 @@ class modStockTransfers extends DolibarrModules
 
     		$sql = array();
 
+		// Surface table-creation failures instead of silently reporting
+		// a successful activation.
 		$result = $this->_load_tables('/stocktransfers/sql/');
+		if ($result < 0) {
+			return $result;
+		}
 
 		return $this->_init($sql, $options);
 	}
