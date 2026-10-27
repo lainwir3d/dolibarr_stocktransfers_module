@@ -27,7 +27,8 @@
 // == ACTIVATE the ERROR reporting
 //ini_set('display_errors',1);ini_set('display_startup_errors',1);error_reporting(-1);
 
-define('NOCSRFCHECK',1);
+// The CSRF check must stay ON for a settings page that writes Dolibarr
+// constants: rely on the standard token instead of disabling it.
 
 $res=0;
 if (! $res && file_exists("../main.inc.php")) $res=@include("../main.inc.php");
@@ -76,6 +77,17 @@ $langs->load("languages");
 
         if (!empty($_POST['config'])){
 
+            // The token field is part of the form; verify it explicitly so
+            // the page stays safe even if the global check level changes.
+            if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST'
+                || empty($_SESSION['token']) || !hash_equals((string) $_SESSION['token'], (string) GETPOST('token', 'alpha'))) {
+                accessforbidden('Invalid CSRF token');
+            }
+            // This page is a module settings page: require admin rights.
+            if (empty($user->admin)) {
+                accessforbidden();
+            }
+
             //echo _var_export($_POST,true);die();
 
             /* save incoming data */
@@ -84,15 +96,21 @@ $langs->load("languages");
                 // = direct fields (like ['config']['STOCKTRANSFERS_MODULE_SETT_11'])
 					foreach ($_POST['config'] as $K => $v){
 						//$result = dolibarr_set_const($db, "STRIPE_TEST_PUBLISHABLE_KEY", GETPOST('STRIPE_TEST_PUBLISHABLE_KEY', 'alpha'), 'chaine', 0, '', $conf->entity);
+						// Only this module's own constants: never accept an
+						// arbitrary constant name from the request.
+						if (!preg_match('/^STOCKTRANSFERS_MODULE_/', (string) $K)) { $error++; continue; }
 						$result = dolibarr_set_const($db, $K, $v, 'chaine', 0, '', $conf->entity);
-						if (! $result > 0) $error ++;
+						if (! ($result > 0)) $error ++;
 					}
                 // = fields to be serialized (like ['s_translations']['STOCKTRANSFERS_MODULE_SETT_02'])
+                if (!empty($_POST['s_translations'])){
 					foreach ($_POST['s_translations'] as $K => $arr){
 						//$result = dolibarr_set_const($db, "STRIPE_TEST_PUBLISHABLE_KEY", GETPOST('STRIPE_TEST_PUBLISHABLE_KEY', 'alpha'), 'chaine', 0, '', $conf->entity);
+						if (!preg_match('/^STOCKTRANSFERS_MODULE_/', (string) $K)) { $error++; continue; }
 						$result = dolibarr_set_const($db, $K, json_encode($arr), 'chaine', 0, '', $conf->entity);
-						if (! $result > 0) $error ++;
+						if (! ($result > 0)) $error ++;
 					}
+				}
 
             /* message to user */
             	if (! $error) {

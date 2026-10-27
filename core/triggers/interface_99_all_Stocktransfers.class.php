@@ -76,12 +76,12 @@ class InterfaceStockTransfers extends DolibarrTriggers
 
                 case 'STOCK_MOVEMENT':
 
-                    /* this event is triggerd when a movement is added during
-                     * a massive stock movement insertion
-                     * so we take measures to avoid add 2 the same transfer: $_POST['token']
+                    /* this event is triggered when a movement is added during
+                     * a massive stock movement insertion, so we log a record
+                     * to trace it (avoiding duplicates per token).
                      */
                     if (!isset($_SESSION['last_stocktransfer_token'])
-                            || $_SESSION['last_stocktransfer_token']!=$_POST['token']){
+                            || (isset($_POST['token']) && $_SESSION['last_stocktransfer_token'] !== $_POST['token'])){
 
                         if (empty($_SESSION['massstockmove'])) break;
 
@@ -89,11 +89,13 @@ class InterfaceStockTransfers extends DolibarrTriggers
                         dol_include_once('/stocktransfers/lib/stocktransfers_transfer.class.php');
                         $transfer = new StockTransfer($db);
                         $transfer->label = 'Alert: massive stock movement';
-                        $transfer->s = 'GET= '.var_export($_GET,true).' | POST= '.var_export($_POST,true).' | _SESSION[massstockmove]= '.var_export($listofdata,true);
-                        $result = $transfer->create(NULL);
-                        if ($result < 0) dol_print_error($db,$transfer->error);
+                        $transfer->fk_depot1 = isset($listofdata['id_entrepot_source']) ? (int) $listofdata['id_entrepot_source'] : 0;
+                        $transfer->fk_depot2 = isset($listofdata['id_entrepot_destination']) ? (int) $listofdata['id_entrepot_destination'] : 0;
+                        $transfer->private_note = isset($listofdata['moveList']) ? $this->db->escape(json_encode($listofdata['moveList'])) : '';
+                        $result = $transfer->create();
+                        if ($result < 0) dol_syslog("stocktransfers mass-move trace insert failed: ".(is_scalar($transfer->error) ? $transfer->error : ''), LOG_ERR);
 
-                        $_SESSION['last_stocktransfer_token'] = $_POST['token'];
+                        if (isset($_POST['token'])) $_SESSION['last_stocktransfer_token'] = $_POST['token'];
                     }
                     break;
 
