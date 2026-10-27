@@ -589,7 +589,7 @@ class StockTransfer extends CommonObject
     {
         $sql = "SELECT rowid FROM ".MAIN_DB_PREFIX."stock_mouvement";
         $sql.= " WHERE fk_product = ".((int) $fk_product)." AND fk_entrepot = ".((int) $fk_entrepot);
-        $sql.= " AND type = ".((int) $type);
+        $sql.= " AND type_mouvement = ".((int) $type);
         if ($inventorycode !== '') $sql.= " AND inventorycode = '".$this->db->escape($inventorycode)."'";
         $sql.= " ORDER BY rowid DESC";
         $sql.= " LIMIT 1";
