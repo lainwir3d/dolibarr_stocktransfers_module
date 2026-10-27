@@ -492,6 +492,93 @@ class StockTransfer extends CommonObject
     }
 
     /**
+     *  \brief  Apply a status transition (or a plain save) to the transfer.
+     *          Shared by the web page and the REST API so both behave
+     *          identically. Movements are created BEFORE the new status is
+     *          persisted: a movement failure never leaves a SENT/RECEIVED
+     *          transfer whose stock movements are missing or partial, and
+     *          illegal status jumps (e.g. a crafted 0 -> 2) are refused.
+     *  \param  User    $user       The acting user
+     *  \param  string  $newstatus  '0' (draft), '1' (sent) or '2' (received)
+     *  \return int                 >0 OK, <0 KO (this->error is set)
+     */
+    function applyStatusTransition($user, $newstatus)
+    {
+        $newstatus = (string) $newstatus;
+        if (!in_array($newstatus, array('0', '1', '2'), true)) {
+            $this->error = 'ErrorBadParameter status';
+            return -1;
+        }
+
+        // A brand new transfer always starts as a draft.
+        if (empty($this->rowid)) {
+            $this->status = '0';
+            return $this->create();
+        }
+
+        $previous_status = (string) $this->status;
+
+        // No status change: just persist the card.
+        if ($newstatus === $previous_status) {
+            $this->status = $newstatus;
+            return $this->update();
+        }
+
+        $movement_error = 0;
+
+        // = the transfer is being stated as SENT
+        if ($previous_status == '0' && $newstatus == '1'){
+
+            $result = $this->create_stock_movements('1');
+            if ($result < 0) $movement_error = 1;
+
+        // = the transfer is being stated as RECEIVED
+        }else if ($previous_status == '1' && $newstatus == '2'){
+
+            $result = $this->create_stock_movements('2');
+            if ($result < 0) $movement_error = 1;
+
+        // = the transfer is being stated AGAIN as DRAFT, from RECEIVED
+        }else if ($previous_status == '2' && $newstatus == '0'){
+
+            $reverse = 1;
+            $result = $this->create_stock_movements('2',$reverse);
+            if ($result < 0) $movement_error = 1;
+            if (!$movement_error) {
+                $result = $this->create_stock_movements('1',$reverse);
+                if ($result < 0) $movement_error = 1;
+            }
+
+        // = the transfer is being stated AGAIN as DRAFT, from SENT
+        }else if ($previous_status == '1' && $newstatus == '0'){
+
+            $reverse = 1;
+            $result = $this->create_stock_movements('1',$reverse);
+            if ($result < 0) $movement_error = 1;
+
+        }else{
+            // Illegal transition (e.g. a crafted 0 -> 2 jump): refuse.
+            $movement_error = 1;
+            $this->error = 'ErrorBadParameter status';
+        }
+
+        if (!$movement_error){
+            // Now that the movements exist (or were reversed), persist the
+            // card with its new status and the movement ids.
+            $this->status = $newstatus;
+            $result = $this->update();
+            if ($result < 0) $movement_error = 1;
+        }
+        if ($movement_error){
+            // Restore the pre-action status so nothing downstream relies
+            // on a status that was never persisted.
+            $this->status = $previous_status;
+            return -1;
+        }
+        return 1;
+    }
+
+    /**
      *  \brief  Identify the stock movement just created by correct_stock on
      *          this connection, scoped to this product/warehouse/type —
      *          instead of the previous global "last N movements" guess that

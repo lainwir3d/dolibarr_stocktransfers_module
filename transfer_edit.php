@@ -171,63 +171,12 @@ if ($action == 'delete_transfer') {
         // happen through an explicit status transition on a saved card.
         if ($new) $transfer->status = '0';
 
-        // Movements first, status persisted only afterwards: a movement
-        // failure must never leave a SENT/RECEIVED transfer whose stock
-        // movements are missing or partial.
-        $movement_error = 0;
+        // Status transitions run through the shared class method so the
+        // web page and the REST API behave identically (movements first,
+        // status persisted only on success, illegal jumps refused).
+        $result = $transfer->applyStatusTransition($user, isset($_POST['status']) ? $_POST['status'] : $previous_status);
 
-        if (!$new && isset($_POST['status']) && (string) $_POST['status'] !== (string) $previous_status){
-
-            // = the transfer is being stated as SENT
-            if ($previous_status=='0' && $_POST['status']=='1'){
-
-                $result = $transfer->create_stock_movements('1');
-                if ($result < 0) $movement_error = 1;
-
-            // = the transfer is being stated as RECEIVED
-            }else if ($previous_status=='1' && $_POST['status']=='2'){
-
-                $result = $transfer->create_stock_movements('2');
-                if ($result < 0) $movement_error = 1;
-
-            // = the transfer is being stated AGAIN as DRAFT, from RECEIVED
-            }else if ($previous_status=='2' && $_POST['status']=='0'){
-
-                $reverse = 1;
-                $result = $transfer->create_stock_movements('2',$reverse);
-                if ($result < 0) $movement_error = 1;
-                if (!$movement_error) {
-                    $result = $transfer->create_stock_movements('1',$reverse);
-                    if ($result < 0) $movement_error = 1;
-                }
-
-            // = the transfer is being stated AGAIN as DRAFT, from SENT
-            }else if ($previous_status=='1' && $_POST['status']=='0'){
-
-                $reverse = 1;
-                $result = $transfer->create_stock_movements('1',$reverse);
-                if ($result < 0) $movement_error = 1;
-
-            }else{
-                // Illegal transition (e.g. a crafted 0 -> 2 jump): refuse.
-                $movement_error = 1;
-            }
-
-        }
-
-        if (!$movement_error){
-            // Now that the movements exist (or were reversed), persist the
-            // card with its new status and the movement ids.
-            if ($new)
-                $result = $transfer->create(NULL);
-            else
-                $result = $transfer->update();
-            if ($result < 0) $movement_error = 1;
-        }
-        if ($movement_error){
-            // Restore the pre-action status so nothing below relies on a
-            // status that was never persisted.
-            $transfer->status = $previous_status;
+        if ($result < 0){
             dol_print_error($db, !empty($transfer->error) ? $transfer->error : $langs->trans("Error"));
             die();
         }
