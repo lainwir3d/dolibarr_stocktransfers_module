@@ -76,7 +76,7 @@ $langs->load("stocktransfers@stocktransfers");
 
 // == Get parameters
     $action = GETPOST('action','alpha');
-    $transfer_id = GETPOST('rowid', '0');
+    $transfer_id = GETPOST('rowid', 'int');
 
     $id_product = GETPOST('productid', 'int');
     $batch = GETPOST('batch');
@@ -102,6 +102,10 @@ $langs->load("stocktransfers@stocktransfers");
 
 if ($action == 'delete_transfer') {
 
+    // Every mutating action needs the stock write right, not just read.
+    if (!$user->hasRight('stock', 'mouvement', 'creer')) {
+        accessforbidden();
+    }
     if (!$transfer->rowid || $transfer->status != '0'){
 		setEventMessage($langs->trans("stocktransfersErrorMsg04"),  'errors');
     }else{
@@ -114,6 +118,10 @@ if ($action == 'delete_transfer') {
 
 }else if ($action == 'save_card') {
 
+    // Every mutating action needs the stock write right, not just read.
+    if (!$user->hasRight('stock', 'mouvement', 'creer')) {
+        accessforbidden();
+    }
 
     // == prepare transfer card
 		$previous_status = $transfer->status; // 0 (draft), 1 (sent), 2 (received)
@@ -157,45 +165,76 @@ if ($action == 'delete_transfer') {
             $transfer->status = $_POST['status'];
 
     // == run query on database
-		
+
         $new = $transfer->rowid > 0 ? false : true ;
-        if ($new)
-            $result = $transfer->create(NULL);
-        else
-            $result = $transfer->update();
+        // A brand new transfer always starts as a draft: movements only
+        // happen through an explicit status transition on a saved card.
+        if ($new) $transfer->status = '0';
 
-    // == there is a change of status, then we must to add/remove records about stock movements
+        // Movements first, status persisted only afterwards: a movement
+        // failure must never leave a SENT/RECEIVED transfer whose stock
+        // movements are missing or partial.
+        $movement_error = 0;
 
-        // = the transfer is being stated as SENT
-        if ($previous_status=='0' && $_POST['status']=='1'){
+        if (!$new && isset($_POST['status']) && (string) $_POST['status'] !== (string) $previous_status){
 
-            $result = $transfer->create_stock_movements('1');
+            // = the transfer is being stated as SENT
+            if ($previous_status=='0' && $_POST['status']=='1'){
 
-        // = the transfer is being stated as RECEIVED
-        }else if ($previous_status=='1' && $_POST['status']=='2'){
+                $result = $transfer->create_stock_movements('1');
+                if ($result < 0) $movement_error = 1;
 
-            $result = $transfer->create_stock_movements('2');
+            // = the transfer is being stated as RECEIVED
+            }else if ($previous_status=='1' && $_POST['status']=='2'){
 
-        // = the transfer is being stated AGAIN as DRAFT, from RECEIVED
-        }else if ($previous_status=='2' && $_POST['status']=='0'){
+                $result = $transfer->create_stock_movements('2');
+                if ($result < 0) $movement_error = 1;
 
-            $reverse = 1;
-            $result = $transfer->create_stock_movements('2',$reverse);
-            $result = $transfer->create_stock_movements('1',$reverse);
+            // = the transfer is being stated AGAIN as DRAFT, from RECEIVED
+            }else if ($previous_status=='2' && $_POST['status']=='0'){
 
-        // = the transfer is being stated AGAIN as DRAFT, from SENT
-        }else if ($previous_status=='1' && $_POST['status']=='0'){
+                $reverse = 1;
+                $result = $transfer->create_stock_movements('2',$reverse);
+                if ($result < 0) $movement_error = 1;
+                if (!$movement_error) {
+                    $result = $transfer->create_stock_movements('1',$reverse);
+                    if ($result < 0) $movement_error = 1;
+                }
 
-            $reverse = 1;
-            $result = $transfer->create_stock_movements('1',$reverse);
+            // = the transfer is being stated AGAIN as DRAFT, from SENT
+            }else if ($previous_status=='1' && $_POST['status']=='0'){
 
+                $reverse = 1;
+                $result = $transfer->create_stock_movements('1',$reverse);
+                if ($result < 0) $movement_error = 1;
+
+            }else{
+                // Illegal transition (e.g. a crafted 0 -> 2 jump): refuse.
+                $movement_error = 1;
+            }
+
+        }
+
+        if (!$movement_error){
+            // Now that the movements exist (or were reversed), persist the
+            // card with its new status and the movement ids.
+            if ($new)
+                $result = $transfer->create(NULL);
+            else
+                $result = $transfer->update();
+            if ($result < 0) $movement_error = 1;
+        }
+        if ($movement_error){
+            // Restore the pre-action status so nothing below relies on a
+            // status that was never persisted.
+            $transfer->status = $previous_status;
+            dol_print_error($db, !empty($transfer->error) ? $transfer->error : $langs->trans("Error"));
+            die();
         }
 
     // == response to user
 
-        if ($result < 0){
-            dol_print_error($db,$transfer->error);
-        }else if ($new){
+        if ($new){
 			setEventMessage($langs->trans("RecordCreatedSuccessfully"),  'mesgs');
         }else{
 			setEventMessage($langs->trans("RecordModifiedSuccessfully"), 'mesgs');
@@ -206,6 +245,12 @@ if ($action == 'delete_transfer') {
 
 
 }else if ($action == 'add_line') {
+
+    // Every mutating action needs the stock write right, not just read.
+    if (!$user->hasRight('stock', 'mouvement', 'creer')) {
+        accessforbidden();
+    }
+
 
         //var_dump($_POST);die();
 
@@ -257,6 +302,12 @@ if ($action == 'delete_transfer') {
 
 }else if ($action == 'edit_line') {
 
+    // Every mutating action needs the stock write right, not just read.
+    if (!$user->hasRight('stock', 'mouvement', 'creer')) {
+        accessforbidden();
+    }
+
+
     //var_dump($_POST);die();
 
     if (empty($_POST['add_pid'])){
@@ -293,6 +344,12 @@ if ($action == 'delete_transfer') {
     header("Location: transfer_edit.php?mainmenu=products&leftmenu=&rowid=".$transfer->rowid); die();
 
 }else if ($action == 'del_line') {
+
+    // Every mutating action needs the stock write right, not just read.
+    if (!$user->hasRight('stock', 'mouvement', 'creer')) {
+        accessforbidden();
+    }
+
 
     if (empty($_POST['del_pid'])){
 		setEventMessage($langs->trans("ErrorGlobalVariableUpdater2",'product'), 'errors');
