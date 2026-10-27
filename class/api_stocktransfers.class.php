@@ -190,6 +190,13 @@ class Stocktransfers extends DolibarrApi
 			$line = (object) $line;
 			$this->addLineToTransfer((int) $line->product_id, (float) $line->qty, isset($line->batch) ? (string) $line->batch : '', isset($line->note) ? (string) $line->note : '');
 		}
+		if ($lines) {
+			// Persist the line list on the draft.
+			$result = $this->transfer->update();
+			if ($result < 0) {
+				throw new RestException(500, 'Error saving the transfer lines', array_merge(array($this->transfer->error), $this->transfer->errors));
+			}
+		}
 
 		return $this->transfer->rowid;
 	}
